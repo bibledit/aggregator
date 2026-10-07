@@ -62,15 +62,20 @@ Arguments::Arguments(const int argc, char* argv[])
     };
 
     // Build the getopt_long table from the specs (plus required terminator).
-    constexpr auto make_long_options = []()
+    constexpr auto make_long_options = []
     {
         std::array<option, specs.size() + 1> opts{};
         for (std::size_t i = 0; i < specs.size(); ++i)
         {
             // name must be NULL-terminated: string literals in specs guarantee that
-            opts[i] = option{specs[i].name.data(), specs[i].has_arg, nullptr, specs[i].val};
+            opts[i] = option{
+                .name = specs[i].name.data(),
+                .has_arg = specs[i].has_arg,
+                .flag = nullptr,
+                .val = specs[i].val
+            };
         }
-        opts[specs.size()] = option{nullptr, 0, nullptr, 0};
+        opts[specs.size()] = option{.name = nullptr, .has_arg = 0, .flag = nullptr, .val = 0};
         return opts;
     };
 
