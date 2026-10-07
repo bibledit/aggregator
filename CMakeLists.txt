@@ -117,8 +117,8 @@ find_program(GUNZIP gunzip REQUIRED)
 find_program(TAR tar REQUIRED)
 find_program(ZIP zip REQUIRED)
 find_program(UNZIP unzip REQUIRED)
-find_program(INSTALLMGR installmgr)
-find_program(DIATHEKE diatheke)
+find_program(INSTALLMGR installmgr REQUIRED)
+find_program(DIATHEKE diatheke REQUIRED)
 
 
 # The C++ standard to use, and it is mandatory.

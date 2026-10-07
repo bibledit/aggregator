@@ -1,0 +1,23 @@
+Installation on macOS
+=====================
+
+Sword library
+-------------
+
+Download the SWORD engine from https://crosswire.org/sword/develop/index.jsp
+Unpack it.
+
+In case of version 1.9, update its CMakeLists.txt file:
+
+Below this line: SET(SWORD_VERSION 1.9.0)
+Add these lines:
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED true)
+
+Update it to build a static library.
+
+Then run these commands:
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j20
+sudo cmake --install build
+
