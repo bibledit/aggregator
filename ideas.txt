@@ -1,0 +1,25 @@
+
+
+The scraper "writes" a configuration file.
+Every directory has one configuration file.
+
+The name of the directory will be the name of the group or subgroup.
+Each configuration file starts with an identifier (which is the resource identifier).
+Then it has a timestamp when this resource was updated. Useful for clients.
+Then it follows with the resource name.
+
+The scraper parses identifiers, existing identifiers.
+It writes new identifiers as needed, to the configuration file.
+
+Copy the resources and code one by one from Bibledit.
+
+Start with SWORD resources.
+It installs the module, scrapes it, writes to SQlite file, uninstalls the module again.
+
+Then put them online on a server.
+
+
+The C++ server, copied from Bibledit, drops all GET requests that don't result in sensible output.
+Or it forwards them to one basic page, like "Maintenance mode",
+with a code that discourages crawlers to continue.
+It drops all POST requests, and perhaps more.

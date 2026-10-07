@@ -1,2 +1,3 @@
-# aggregator
-Content aggregator
+# Aggregator
+
+Content aggregator for Bibledit
