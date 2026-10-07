@@ -19,33 +19,28 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <fstream>
 #include <iostream>
- #include "logger.h"
+#include <mutex>
+#include "logger.h"
 
 namespace logger {
 
-void plain (const std::string& summary, const std::string& body)
+static std::mutex mutex;
+
+// Log text to file.
+// Open log file once during the app's lifetime.
+void text (const std::string& message)
 {
-    std::ofstream file;
-    file.open("/tmp/aggregator.log", std::ios::binary | std::ios::app);
-    if (!summary.empty()) {
-        std::cout << summary << std::endl;
-        time_t tt;
-        time(&tt);
-        tm* time_struct = localtime(&tt);
-        char buffer[64];
-        strftime(buffer, sizeof(buffer), "%H:%M:%S", time_struct);
-        using namespace std::chrono;
-        const auto ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() % 1000;
-        file << buffer << "." << ms << " " << summary << std::endl;
-    }
-    if (not body.empty())
-        file << body << std::endl;
-    file.close();
+    static std::ofstream file("/tmp/aggregator.log", std::ios::binary | std::ios::trunc);
+    const std::lock_guard lock(mutex);
+    std::cout << message << std::endl;
+    time_t tt;
+    time(&tt);
+    const tm* time_struct = localtime(&tt);
+    char buffer[64];
+    strftime(buffer, sizeof(buffer), "%H:%M:%S", time_struct);
+    using namespace std::chrono;
+    const auto ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() % 1000;
+    file << buffer << "." << ms << " " << message << std::endl;
 }
 
-
 }
-
-
-
-

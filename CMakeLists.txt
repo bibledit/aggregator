@@ -150,6 +150,12 @@ add_executable(aggregator
 target_link_libraries(aggregator PRIVATE library)
 
 
+# The compile definitions.
+add_compile_definitions(
+	VERSION="${aggregator_VERSION}"
+)
+
+
 # The required system libraries.
 find_package(CURL 8.0.0 REQUIRED)
 target_link_libraries(aggregator PRIVATE CURL::libcurl)

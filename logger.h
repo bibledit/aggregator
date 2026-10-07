@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 namespace logger {
 
-void plain (const std::string& summary, const std::string& body);
+void text (const std::string& message);
 
 template <typename Arg>
 concept one_parameter_stream_writable = requires (std::ostream& os, const Arg& arg)
@@ -35,12 +35,12 @@ template <typename ...Args>
 concept stream_writable = (one_parameter_stream_writable<Args> and ...);
 
 template <stream_writable ...Args>
-void plain(const std::string& summary, Args&& ... args)
+void plain(Args&& ... args)
 {
     std::ostringstream oss;
     bool first {true};
     (void((first ? void(first = false) : void(oss << ' '), oss << std::forward<Args>(args))), ...);
-    plain(summary, std::move(oss).str());
+    text(std::move(oss).str());
 }
 
 }

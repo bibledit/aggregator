@@ -20,11 +20,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #include <iostream>
 #include <ostream>
 #include "arguments.h"
+#include "logger.h"
 
 int main(int argc, char* argv[])
 {
     try
     {
+        logger::plain("Aggregator", VERSION);
         Arguments arguments(argc, argv);
         return EXIT_SUCCESS;
     }
