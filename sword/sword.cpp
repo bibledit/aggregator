@@ -19,6 +19,8 @@
 
 #include <filesystem>
 #include "sword.h"
+
+#include <iostream>
 #include <string>
 #include "logger.h"
 #include "utilities.h"
@@ -103,6 +105,67 @@ void Sword::fetch_modules()
     }
 }
 
+namespace sword {
+
+constexpr std::string_view whitespace{" \t\r\n"};
+
+static constexpr void skip_ws(std::string_view& s) noexcept
+{
+    s.remove_prefix(std::min(s.find_first_not_of(whitespace), s.size()));
+}
+
+// Consumes "<open>text<close>" from the front of line and returns text.
+constexpr std::optional<std::string_view>
+take_delimited(std::string_view& line, const char open, const char close) noexcept
+{
+    if (line.empty() or line.front() != open)
+        return std::nullopt;
+    const auto end = line.find(close, 1);
+    if (end == std::string_view::npos)
+        return std::nullopt;
+    const auto inner = line.substr(1, end - 1);
+    line.remove_prefix(end + 1);
+    return inner;
+}
+
+
+std::optional<info> parse (std::string_view line) noexcept
+{
+    skip_ws(line);
+
+    if (not line.empty() and line.front() == '*') // the leading '*' is optional
+        line.remove_prefix(1);
+
+    skip_ws(line);
+
+    const auto id = take_delimited(line, '[', ']');
+    if (not id)
+        return std::nullopt;
+
+    skip_ws(line);
+
+    const auto version = take_delimited(line, '(', ')');
+    if (not version)
+        return std::nullopt;
+
+    skip_ws(line);
+
+    if (line.empty() or line.front() != '-')
+        return std::nullopt;
+    line.remove_prefix(1);
+
+    skip_ws(line);
+
+    const auto last = line.find_last_not_of(whitespace); // trim the right end
+    if (last == std::string_view::npos)
+        return std::nullopt; // no name after the dash
+    line = line.substr(0, last + 1);
+
+    return info {.id = *id, .version = *version, .name = line};
+}
+
+
+}
 
 
 

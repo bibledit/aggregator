@@ -147,12 +147,19 @@ target_sources(library
 )
 
 
-# The executable.
+# The aggregator executable.
 add_executable(aggregator
 	main.cpp
 )
 target_link_libraries(aggregator PRIVATE library)
 
+
+# The unit tests executable
+add_executable(unittest
+	unittests/main.cpp
+	unittests/sword.cpp
+)
+target_link_libraries(unittest PRIVATE library)
 
 # The compile definitions.
 add_compile_definitions(
@@ -165,6 +172,9 @@ add_compile_definitions(
 # The required system libraries.
 find_package(CURL 8.0.0 REQUIRED)
 target_link_libraries(aggregator PRIVATE CURL::libcurl)
+target_link_libraries(unittest PRIVATE CURL::libcurl)
+find_package(GTest 1.10.0 REQUIRED)
+target_link_libraries(unittest PRIVATE GTest::gtest)
 
 
 # Installation.

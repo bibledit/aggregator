@@ -18,6 +18,7 @@
 
 
 #pragma once
+
 #include <map>
 #include <vector>
 
@@ -34,3 +35,16 @@ private:
     // The modules per remote source.
     std::map<std::string, std::vector<std::string>> m_sources_modules{};
 };
+
+namespace sword {
+
+struct info
+{
+    std::string_view id{};
+    std::string_view version{};
+    std::string_view name{};
+};
+
+std::optional<info> parse (std::string_view line) noexcept;
+
+}
