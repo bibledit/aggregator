@@ -24,6 +24,7 @@ class Arguments
 {
 public:
     explicit Arguments(int argc, char* argv[]);
+    [[nodiscard]] std::string sword() const noexcept { return m_sword; }
 private:
-    std::string m_value;
+    std::string m_sword;
 };

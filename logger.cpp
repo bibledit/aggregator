@@ -30,6 +30,8 @@ static std::mutex mutex;
 // Open log file once during the app's lifetime.
 void text (const std::string& message)
 {
+    if (message.empty())
+        return;
     static std::ofstream file("/tmp/aggregator.log", std::ios::binary | std::ios::trunc);
     const std::lock_guard lock(mutex);
     std::cout << message << std::endl;

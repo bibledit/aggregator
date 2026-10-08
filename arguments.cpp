@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #include <getopt.h>
 #include "arguments.h"
 #include <array>
+#include <iostream>
 #include <ranges>
 #include "exception.h"
 
@@ -30,8 +31,8 @@ Arguments::Arguments(const int argc, char* argv[])
     // Long-only options start at 256 to not collide with an ASCII character.
     enum long_only : int
     {
-        help = 256,
-        sword,
+        o_help = 256,
+        o_sword,
     };
 
     struct OptionSpec
@@ -48,14 +49,14 @@ Arguments::Arguments(const int argc, char* argv[])
         OptionSpec{
             .name = "sword",
             .has_arg = required_argument,
-            .val = sword,
+            .val = o_sword,
             .arg_name = "module",
             .description = "Sword to use"
         },
         OptionSpec{
             .name = "help",
             .has_arg = no_argument,
-            .val = help,
+            .val = o_help,
             .arg_name = "",
             .description = "Show usage help"
         },
@@ -110,10 +111,10 @@ Arguments::Arguments(const int argc, char* argv[])
     {
         switch (c)
         {
-        case sword:
-            m_value = optarg;
+        case o_sword:
+            m_sword = optarg;
             break;
-        case help:
+        case o_help:
         default:
             throw Base(make_usage(argv[0]));
         }

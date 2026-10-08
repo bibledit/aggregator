@@ -23,3 +23,25 @@ The C++ server, copied from Bibledit, drops all GET requests that don't result i
 Or it forwards them to one basic page, like "Maintenance mode",
 with a code that discourages crawlers to continue.
 It drops all POST requests, and perhaps more.
+
+
+Give a HTML forward to the NOS site or other site.
+In the 302 server forward to a local news outlet, one header contains a code,
+which indicates the place where the "personal news feed" is located.
+Server response with standard header that encodes the location that could be served in the forward to the local news outlet in the 302 response
+
+De app adverteren via krant en open Doors en blogs.
+
+Within the app the user may select of many themes so the app looks different.
+Do regular updates with new app names each time, not only related to news
+but also health and so on.
+
+
+Regular users is the app get info about more secret reader on the App Store.
+That could be a health app
+
+
+Ook een gewone bijbel app maken en bij dertig dagen lezen geeft die in do over de meer geheime versie
+
+App bespreken via Weet Magazine voor verdere verspreiding.
+

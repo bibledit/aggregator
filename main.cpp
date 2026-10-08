@@ -21,13 +21,23 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #include <ostream>
 #include "arguments.h"
 #include "logger.h"
+#include "sword/sword.h"
 
 int main(int argc, char* argv[])
 {
     try
     {
         logger::plain("Aggregator", VERSION);
-        Arguments arguments(argc, argv);
+        const Arguments arguments(argc, argv);
+
+        if (not arguments.sword().empty())
+        {
+            Sword sword;
+            sword.initialize();
+            sword.fetch_remote_sources();
+            sword.fetch_modules();
+        }
+
         return EXIT_SUCCESS;
     }
     catch (const std::exception& exception)

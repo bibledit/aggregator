@@ -134,12 +134,16 @@ target_sources(library
 		arguments.cpp
 		curl.cpp
 		logger.cpp
+		sword/sword.cpp
+		utilities.cpp
 	PUBLIC
 	FILE_SET HEADERS
 	FILES
 		arguments.h
 		curl.h
 		logger.h
+		sword/sword.h
+		utilities.h
 )
 
 
@@ -153,6 +157,8 @@ target_link_libraries(aggregator PRIVATE library)
 # The compile definitions.
 add_compile_definitions(
 	VERSION="${aggregator_VERSION}"
+	BUILD_DIR="${CMAKE_BINARY_DIR}"
+	SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
 
 
@@ -162,7 +168,7 @@ target_link_libraries(aggregator PRIVATE CURL::libcurl)
 
 
 # Installation.
-install(TARGETS aggregator DESTINATION bin)
+#install(TARGETS aggregator DESTINATION bin)
 
 
 # Create tarball with target "dist"
