@@ -115,7 +115,7 @@ static constexpr void skip_ws(std::string_view& s) noexcept
 }
 
 // Consumes "<open>text<close>" from the front of line and returns text.
-constexpr std::optional<std::string_view>
+static constexpr std::optional<std::string_view>
 take_delimited(std::string_view& line, const char open, const char close) noexcept
 {
     if (line.empty() or line.front() != open)
@@ -164,17 +164,10 @@ std::optional<info> parse (std::string_view line) noexcept
     return info {.id = *id, .version = *version, .name = line};
 }
 
-
 }
 
 
 
-// std::string sword_logic_module_list_path ()
-// {
-//   return filter_url_create_root_path ({database_logic_databases (), "client", "sword_modules.txt"});
-// }
-//
-//
 // // Gets the name of the remote source of the $line like this:
 // // [CrossWire] *[Shona] (1.1) - Shona Bible
 // std::string sword_logic_get_source (std::string line)
@@ -340,13 +333,7 @@ std::optional<info> parse (std::string_view line) noexcept
 // }
 //
 //
-// // Get available SWORD modules.
-// std::vector <std::string> sword_logic_get_available ()
-// {
-//   const std::string contents = filter_url_file_get_contents (sword_logic_module_list_path ());
-//   return filter::string::explode (contents, '\n');
-// }
-//
+
 //
 // // Get installed SWORD modules.
 // std::vector <std::string> sword_logic_get_installed ()
@@ -603,22 +590,6 @@ std::optional<info> parse (std::string_view line) noexcept
 // }
 //
 //
-// // Text saying that the Cloud will install the requested SWORD module.
-// // Client knows not to cache this.
-// std::string sword_logic_installing_module_text ()
-// {
-//   return "The requested SWORD module is not yet installed. Bibledit Cloud will install it shortly. Please check back after a few minutes.";
-// }
-//
-//
-// // Text stating fetch failure.
-// // Client knows not to cache this.
-// std::string sword_logic_fetch_failure_text ()
-// {
-//   return "Failure to fetch SWORD content.";
-// }
-//
-//
 // // Tracker for accessing the SWORD module.
 // std::string sword_logic_access_tracker (const std::string& module)
 // {
@@ -668,232 +639,7 @@ std::optional<info> parse (std::string_view line) noexcept
 // }
 //
 //
-// void sword_logic_installmgr_initialize ()
-// {
-// #ifdef HAVE_SWORD
-//   sword::SWMgr *mgr = new sword::SWMgr();
-//   if (!mgr->config) logger::plain ("ERROR: Please configure SWORD first.");
-//
-//   sword::SWBuf baseDir = sword_logic_get_path ().c_str ();
-//
-//   sword::InstallMgr *installMgr = new sword::InstallMgr (baseDir, NULL);
-//   installMgr->setUserDisclaimerConfirmed (true);
-//
-//   sword::SWBuf confPath = baseDir + "/InstallMgr.conf";
-//   sword::FileMgr::createParent (confPath.c_str());
-//   remove(confPath.c_str());
-//
-//   sword::InstallSource is("FTP");
-//   is.caption = "CrossWire";
-//   is.source = "ftp.crosswire.org";
-//   is.directory = "/pub/sword/raw";
-//
-//   sword::SWConfig config(confPath.c_str());
-//   config["General"]["PassiveFTP"] = "true";
-//   config["Sources"]["FTPSource"] = is.getConfEnt();
-//   config.Save();
-//
-//   delete installMgr;
-//   delete mgr;
-// #endif
-// }
-//
-//
-// bool sword_logic_installmgr_synchronize_configuration_with_master ()
-// {
-//   bool success = true;
-// #ifdef HAVE_SWORD
-//   sword::SWBuf baseDir = sword_logic_get_path ().c_str ();
-//
-//   sword::InstallMgr *installMgr = new sword::InstallMgr (baseDir, NULL);
-//   installMgr->setUserDisclaimerConfirmed (true);
-//
-//   if (installMgr->refreshRemoteSourceConfiguration()) {
-//     success = false;
-//   }
-//
-//   delete installMgr;
-// #endif
-//   return success;
-// }
-//
-//
-// void sword_logic_installmgr_list_remote_sources ([[maybe_unused]] const std::vector <std::string>& sources)
-// {
-// #ifdef HAVE_SWORD
-//   sword::SWBuf baseDir = sword_logic_get_path ().c_str ();
-//
-//   sword::InstallMgr *installMgr = new sword::InstallMgr (baseDir, NULL);
-//   installMgr->setUserDisclaimerConfirmed (true);
-//
-//   for (sword::InstallSourceMap::iterator it = installMgr->sources.begin(); it != installMgr->sources.end(); it++) {
-//     const std::string caption (it->second->caption);
-//     sources.push_back (caption);
-//     /*
-//     std::string description;
-//     description.append (caption);
-//     description.append (" - ");
-//     description.append (it->second->type);
-//     description.append (" - ");
-//     description.append (it->second->source);
-//     description.append (" - ");
-//     description.append (it->second->directory);
-//     logger::plain (description);
-//     */
-//   }
-//
-//   delete installMgr;
-// #endif
-// }
-//
-//
-// bool sword_logic_installmgr_refresh_remote_source ([[maybe_unused]] const std::string& name)
-// {
-//   bool success = true;
-// #ifdef HAVE_SWORD
-//   sword::SWBuf baseDir = sword_logic_get_path ().c_str ();
-//
-//   sword::InstallMgr *installMgr = new sword::InstallMgr (baseDir, NULL);
-//   installMgr->setUserDisclaimerConfirmed (true);
-//
-//   sword::InstallSourceMap::iterator source = installMgr->sources.find(name.c_str ());
-//   if (source == installMgr->sources.end()) {
-//     logger::plain ("Could not find remote source", name);
-//   } else {
-//     if (installMgr->refreshRemoteSource(source->second)) {
-//       success = false;
-//     }
-//   }
-//
-//   delete installMgr;
-// #endif
-//   return success;
-// }
-//
-//
-// void sword_logic_installmgr_list_remote_modules ([[maybe_unused]] const std::string& source_name,
-//                                                  [[maybe_unused]] std::vector <std::string>& modules)
-// {
-// #ifdef HAVE_SWORD
-//   sword::SWMgr *mgr = new sword::SWMgr();
-//
-//   sword::SWBuf baseDir = sword_logic_get_path ().c_str ();
-//
-//   sword::InstallMgr *installMgr = new sword::InstallMgr (baseDir, NULL);
-//   installMgr->setUserDisclaimerConfirmed (true);
-//
-//   sword::InstallSourceMap::iterator source = installMgr->sources.find(source_name.c_str ());
-//   if (source == installMgr->sources.end()) {
-//     logger::plain ("Could not find remote source", source_name);
-//   } else {
-//     sword::SWMgr *otherMgr = source->second->getMgr();
-//     sword::SWModule *module;
-//     if (!otherMgr) otherMgr = mgr;
-//     std::map<sword::SWModule *, int> mods = sword::InstallMgr::getModuleStatus(*mgr, *otherMgr);
-//     for (std::map<sword::SWModule *, int>::iterator it = mods.begin(); it != mods.end(); it++) {
-//       module = it->first;
-//       sword::SWBuf version = module->getConfigEntry("Version");
-//       sword::SWBuf status = " ";
-//       if (it->second & sword::InstallMgr::MODSTAT_NEW) status = "*";
-//       if (it->second & sword::InstallMgr::MODSTAT_OLDER) status = "-";
-//       if (it->second & sword::InstallMgr::MODSTAT_UPDATED) status = "+";
-//       std::string module_name (status);
-//       module_name.append ("[");
-//       module_name.append (module->getName());
-//       module_name.append ("]  \t(");
-//       module_name.append (version);
-//       module_name.append (")  \t- ");
-//       module_name.append (module->getDescription());
-//       // Check if the module is a verse-based Bible or commentary.
-//       bool verse_based = false;
-//       std::string module_type = module->getType ();
-//       if (module_type == "Biblical Texts") verse_based = true;
-//       if (module_type == "Commentaries") verse_based = true;
-//       if (verse_based) modules.push_back (module_name);
-//     }
-//   }
-//
-//   delete installMgr;
-//   delete mgr;
-// #endif
-// }
-//
-// /*
-//  This function works, but there are cases where it crashes as follows:
-//
-//  libsword.so.11v5(_ZN5sword7FileMgr7sysOpenEPNS_8FileDescE+0x39)
-//  libsword.so.11v5(_ZN5sword8FileDesc5getFdEv+0x20)
-//  libsword.so.11v5(_ZN5sword8SWConfig4LoadEv+0x16c)
-//  libsword.so.11v5(_ZN5sword8SWConfigC2EPKc+0xcb)
-//  libsword.so.11v5(_ZN5sword5SWMgr13loadConfigDirEPKc+0x1af)
-//  libsword.so.11v5(_ZN5sword5SWMgr4LoadEv+0x201)
-//  libsword.so.11v5(_ZN5sword5SWMgrC1EPKcbPNS_11SWFilterMgrEbb+0x325)
-//
-//  And this crash takes down the whole Bibledit Cloud instance.
-//  */
-// std::string sword_logic_diatheke ([[maybe_unused]] const std::string& module_name,
-//                                   [[maybe_unused]] const std::string& osis,
-//                                   [[maybe_unused]] int chapter,
-//                                   [[maybe_unused]] int verse,
-//                                   [[maybe_unused]] bool& available)
-// {
-//   std::string rendering {};
-// #ifdef HAVE_SWORD
-//   // When accessing the SWORD library from multiple threads simultaneously, the library often crashes.
-//   // A mutex fixes this behaviour.
-//   sword_logic_library_access_mutex.lock ();
-//
-//   // The SWORD manager should be pointed to the path of the library, in order to work.
-//   sword::SWMgr manager (sword_logic_get_path ().c_str ());
-//
-//   manager.setGlobalOption("Footnotes", "Off");
-//   manager.setGlobalOption("Headings", "Off");
-//   manager.setGlobalOption("Strong's Numbers", "Off");
-//   manager.setGlobalOption("Morphological Tags", "Off");
-//   manager.setGlobalOption("Hebrew Cantillation", "On");
-//   manager.setGlobalOption("Hebrew Vowel Points", "On");
-//   manager.setGlobalOption("Greek Accents", "On");
-//   manager.setGlobalOption("Lemmas", "Off");
-//   manager.setGlobalOption("Cross-references", "Off");
-//   manager.setGlobalOption("Words of Christ in Red", "Off");
-//   manager.setGlobalOption("Arabic Vowel Points", "On");
-//   manager.setGlobalOption("Glosses", "Off");
-//   manager.setGlobalOption("Transliterated Forms", "Off");
-//   manager.setGlobalOption("Enumerations", "Off");
-//   manager.setGlobalOption("Transliteration", "Off");
-//   manager.setGlobalOption("Textual Variants", "All Readings");
-//   //manager.setGlobalOption("Textual Variants", "Secondary Reading");
-//   //manager.setGlobalOption("Textual Variants", "Primary Reading");
-//
-//   sword::SWModule *module = manager.getModule (module_name.c_str ());
-//   available = module;
-//   if (module) {
-//     std::string key = osis + " " + filter::string::convert_to_string (chapter) + ":" + filter::string::convert_to_string (verse);
-//     module->setKey (key.c_str ());
-//     rendering = module->renderText();
-//   }
-//   sword_logic_library_access_mutex.unlock ();
-// #endif
-//
-//   return rendering;
-// }
-//
-//
-// void sword_logic_log (std::string message)
-// {
-//   // Remove less comely stuff, warnings, confusing information.
-//   message = filter::string::replace ("-=+*", "", message);
-//   message = filter::string::replace ("WARNING", "", message);
-//   message = filter::string::replace ("*+=-", "", message);
-//   message = filter::string::replace ("enable?", "", message);
-//   message = filter::string::replace ("[no]", "", message);
-//   // Clean message up.
-//   message = filter::string::trim (message);
-//   // Record in the journal.
-//   logger::plain (message);
-// }
-//
-//
+
 // std::string sword_logic_clean_verse (const std::string& module, int chapter, int verse, std::string text)
 // {
 //   // Remove any OSIS elements or make those elements displayable.
@@ -923,9 +669,3 @@ std::optional<info> parse (std::string_view line) noexcept
 //   return text;
 // }
 //
-//
-// // Take the SWORD $source and SWORD $module and form it into a canonical resource name.
-// std::string sword_logic_get_resource_name (const std::string& source, const std::string& module)
-// {
-//   return "[" + source + "][" + module + "]";
-// }
