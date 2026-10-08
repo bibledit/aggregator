@@ -129,7 +129,7 @@ take_delimited(std::string_view& line, const char open, const char close) noexce
 }
 
 
-std::optional<info> parse (std::string_view line) noexcept
+static constexpr std::optional<info> parse_impl (std::string_view line) noexcept
 {
     skip_ws(line);
 
@@ -162,6 +162,40 @@ std::optional<info> parse (std::string_view line) noexcept
     line = line.substr(0, last + 1);
 
     return info {.id = *id, .version = *version, .name = line};
+}
+
+
+// Static unit tests.
+namespace {
+
+constexpr std::string_view line1 {"*[ymp2025eb]  	(2.7)  	- Yamap"};
+static_assert(parse_impl(line1)->id == "ymp2025eb");
+static_assert(parse_impl(line1)->version == "2.7");
+static_assert(parse_impl(line1)->name == "Yamap");
+
+constexpr std::string_view line2 {"*[peg2020eb]  	(4.7)  	- ସତ୍‌ ବଚନ୍"};
+static_assert(parse_impl(line2)->id == "peg2020eb");
+static_assert(parse_impl(line2)->version == "4.7");
+static_assert(parse_impl(line2)->name == "ସତ୍‌ ବଚନ୍");
+
+constexpr std::string_view line3 {"*[pan2017eb]  	(21.37)  	- ਇੰਡਿਅਨ ਰਿਵਾਇਜ਼ਡ ਵਰਜ਼ਨ (IRV) - ਪੰਜਾਬੀ"};
+static_assert(parse_impl(line3)->id == "pan2017eb");
+static_assert(parse_impl(line3)->version == "21.37");
+static_assert(parse_impl(line3)->name == "ਇੰਡਿਅਨ ਰਿਵਾਇਜ਼ਡ ਵਰਜ਼ਨ (IRV) - ਪੰਜਾਬੀ");
+
+constexpr std::string_view line4 {"*[ABSMaps]  	(1.071229)  	- Maps by American Bible Society (1888)"};
+static_assert(parse_impl(line4)->id == "ABSMaps");
+static_assert(parse_impl(line4)->version == "1.071229");
+static_assert(parse_impl(line4)->name == "Maps by American Bible Society (1888)");
+
+}
+
+
+
+
+std::optional<info> parse (std::string_view line) noexcept
+{
+    return parse_impl(line);
 }
 
 }
