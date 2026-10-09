@@ -28,7 +28,7 @@
 #include "utilities.h"
 #include "exception.h"
 
-namespace sword {
+namespace store {
 
 Store::Store(const std::optional<std::filesystem::path>& alternate_store_path)
 {

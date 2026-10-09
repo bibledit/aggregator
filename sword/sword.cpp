@@ -93,9 +93,9 @@ void Sword::fetch_modules()
         utilities::shell_run("installmgr -rl \"" + remote_source + "\"", out_err);
         for (const auto& line : utilities::explode_lines(out_err, '\n'))
         {
-            if (std::optional<sword::info> info = sword::parse (line))
+            if (const std::optional<sword::info> info = sword::parse (line))
             {
-                sword::Module module {
+                store::Module module {
                     .source = remote_source,
                     .identifier = std::string(info.value().id),
                     .version = std::string(info.value().version),

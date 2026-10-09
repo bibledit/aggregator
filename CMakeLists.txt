@@ -135,7 +135,7 @@ target_sources(library
 		curl.cpp
 		logger.cpp
 		sword/sword.cpp
-		sword/store.cpp
+	store.cpp
 		utilities.cpp
 	PUBLIC
 	FILE_SET HEADERS
@@ -144,7 +144,7 @@ target_sources(library
 		curl.h
 		logger.h
 		sword/sword.h
-		sword/store.h
+	store.h
 		utilities.h
 )
 

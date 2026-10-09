@@ -22,7 +22,7 @@
 #include <map>
 #include <vector>
 
-#include "store.h"
+#include "../store.h"
 
 class Sword
 {
@@ -35,7 +35,7 @@ private:
     // The remote sources.
     std::vector<std::string> m_remote_sources{};
     // The modules store.
-    sword::Store m_store{std::nullopt}; // Store with default path.
+    store::Store m_store{std::nullopt}; // Store with default path.
 };
 
 namespace sword {

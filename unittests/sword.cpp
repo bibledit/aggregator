@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "utilities.h"
-#include "sword/store.h"
+#include "../store.h"
 
 TEST(sword, store)
 {
@@ -32,7 +32,7 @@ TEST(sword, store)
     std::filesystem::remove(path, ec);
 
     // This loads the store with content from the given path.
-    sword::Store store(path);
+    store::Store store(path);
 
     // Testing data.
     constexpr auto source1 {"source1"};
@@ -43,10 +43,10 @@ TEST(sword, store)
     constexpr auto version2 {"version2"};
     constexpr auto name1 {"name1"};
     constexpr auto name2 {"name2"};
-    constexpr sword::Module module1 {.source = source1, .identifier = identifier1, .version = version1, .name = name1};
-    constexpr sword::Module module2 {.source = source1, .identifier = identifier2, .version = version2, .name = name2};
-    constexpr sword::Module module3 {.source = source2, .identifier = identifier1, .version = version1, .name = name1};
-    constexpr sword::Module module4 {.source = source2, .identifier = identifier2, .version = version2, .name = name2};
+    constexpr store::Module module1 {.source = source1, .identifier = identifier1, .version = version1, .name = name1};
+    constexpr store::Module module2 {.source = source1, .identifier = identifier2, .version = version2, .name = name2};
+    constexpr store::Module module3 {.source = source2, .identifier = identifier1, .version = version1, .name = name1};
+    constexpr store::Module module4 {.source = source2, .identifier = identifier2, .version = version2, .name = name2};
 
     // Test adding modules, no duplicate modules.
     EXPECT_EQ (store.count(), 0);
@@ -71,7 +71,7 @@ TEST(sword, store)
     EXPECT_EQ(store.get_module(module3.source, module3.identifier), module3);
 
     // Update item.
-    sword::Module updated_module = module1;
+    store::Module updated_module = module1;
     updated_module.version = "updated_version";
     updated_module.name = "updated_name";
     store.add_or_replace(updated_module);
@@ -79,6 +79,6 @@ TEST(sword, store)
 
     // Save store. Load JSON in a second store: Both should be the same.
     store.save_to_file();
-    sword::Store store2(path);
+    store::Store store2(path);
     EXPECT_EQ(store, store2);
 }
