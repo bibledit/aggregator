@@ -123,4 +123,11 @@ void Store::add_or_replace(const Module& module)
     return {}; // Not found.
 }
 
+
+[[nodiscard]] std::size_t Store::count(const std::string& source) const
+{
+    return static_cast<decltype(count(source))>(std::ranges::count(m_modules, source, &Module::source));
+}
+
+
 }

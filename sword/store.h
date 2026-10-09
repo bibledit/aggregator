@@ -42,15 +42,10 @@ public:
     ~Store();
     void save_to_file() const;
     void add_or_replace(const Module&);
-    [[nodiscard]] std::size_t size() const
-    {
-        return m_modules.size();
-    }
+    [[nodiscard]] std::size_t count() const { return m_modules.size(); }
+    [[nodiscard]] std::size_t count(const std::string&) const;
     [[nodiscard]] std::optional<Module> get_module(const std::string& source, const std::string& identifier) const;
-    constexpr bool operator==(const Store& other) const
-    {
-        return m_modules == other.m_modules;
-    }
+    constexpr bool operator==(const Store& other) const { return m_modules == other.m_modules; }
 private:
     void load_from_file();
     std::vector<Module> m_modules{};

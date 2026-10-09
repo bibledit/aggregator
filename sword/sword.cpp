@@ -85,23 +85,27 @@ void Sword::fetch_remote_sources()
 void Sword::fetch_modules()
 {
     logger::plain("Fetching SWORD modules");
-    m_sources_modules.clear();
     for (const auto& remote_source : m_remote_sources)
     {
         utilities::shell_run("installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -r \"" + remote_source + "\"", out_err);
         utilities::trim(out_err);
         logger::plain(out_err);
         utilities::shell_run("installmgr -rl \"" + remote_source + "\"", out_err);
-        for (auto line : utilities::explode_lines(out_err, '\n'))
+        for (const auto& line : utilities::explode_lines(out_err, '\n'))
         {
-            utilities::trim(line);
-            if (line.empty()) continue;
-            if (line.find('[') == std::string::npos) continue;
-            if (line.find(']') == std::string::npos) continue;
-            m_sources_modules[remote_source].emplace_back(line);
-            logger::plain(line);
+            if (std::optional<sword::info> info = sword::parse (line))
+            {
+                sword::Module module {
+                    .source = remote_source,
+                    .identifier = std::string(info.value().id),
+                    .version = std::string(info.value().version),
+                    .name = std::string(info.value().name)
+                };
+                m_store.add_or_replace(module);
+                logger::plain(line);
+            }
         }
-        logger::plain(remote_source, ":", m_sources_modules[remote_source].size(), "modules");
+        logger::plain(remote_source, ":", m_store.count(remote_source), "modules");
     }
 }
 

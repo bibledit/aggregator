@@ -49,16 +49,20 @@ TEST(sword, store)
     constexpr sword::Module module4 {.source = source2, .identifier = identifier2, .version = version2, .name = name2};
 
     // Test adding modules, no duplicate modules.
-    EXPECT_EQ (store.size(), 0);
+    EXPECT_EQ (store.count(), 0);
     store.add_or_replace(module1); // Adds.
     store.add_or_replace(module2);
-    EXPECT_EQ (store.size(), 2);
+    EXPECT_EQ (store.count(), 2);
+    EXPECT_EQ (store.count(source1), 2);
+    EXPECT_EQ (store.count(source2), 0);
     store.add_or_replace(module3);
     store.add_or_replace(module4);
-    EXPECT_EQ (store.size(), 4);
+    EXPECT_EQ (store.count(), 4);
     store.add_or_replace(module1); // Replaces.
     store.add_or_replace(module2);
-    EXPECT_EQ (store.size(), 4);
+    EXPECT_EQ (store.count(), 4);
+    EXPECT_EQ (store.count(source1), 2);
+    EXPECT_EQ (store.count(source2), 2);
 
     // Fetch item if exists, or null optional.
     EXPECT_FALSE(store.get_module(module1.source, "non-existing-identifier"));

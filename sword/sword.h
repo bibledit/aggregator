@@ -22,6 +22,8 @@
 #include <map>
 #include <vector>
 
+#include "store.h"
+
 class Sword
 {
 public:
@@ -32,8 +34,8 @@ private:
     std::string out_err{};
     // The remote sources.
     std::vector<std::string> m_remote_sources{};
-    // The modules per remote source.
-    std::map<std::string, std::vector<std::string>> m_sources_modules{};
+    // The modules store.
+    sword::Store m_store{std::nullopt}; // Store with default path.
 };
 
 namespace sword {
