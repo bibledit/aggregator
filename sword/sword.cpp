@@ -109,7 +109,7 @@ namespace sword {
 
 constexpr std::string_view whitespace{" \t\r\n"};
 
-static constexpr void skip_ws(std::string_view& s) noexcept
+static constexpr void skip_whitespace(std::string_view& s) noexcept
 {
     s.remove_prefix(std::min(s.find_first_not_of(whitespace), s.size()));
 }
@@ -131,30 +131,30 @@ take_delimited(std::string_view& line, const char open, const char close) noexce
 
 static constexpr std::optional<info> parse_impl (std::string_view line) noexcept
 {
-    skip_ws(line);
+    skip_whitespace(line);
 
     if (not line.empty() and line.front() == '*') // the leading '*' is optional
         line.remove_prefix(1);
 
-    skip_ws(line);
+    skip_whitespace(line);
 
     const auto id = take_delimited(line, '[', ']');
     if (not id)
         return std::nullopt;
 
-    skip_ws(line);
+    skip_whitespace(line);
 
     const auto version = take_delimited(line, '(', ')');
     if (not version)
         return std::nullopt;
 
-    skip_ws(line);
+    skip_whitespace(line);
 
     if (line.empty() or line.front() != '-')
         return std::nullopt;
     line.remove_prefix(1);
 
-    skip_ws(line);
+    skip_whitespace(line);
 
     const auto last = line.find_last_not_of(whitespace); // trim the right end
     if (last == std::string_view::npos)
@@ -188,12 +188,19 @@ static_assert(parse_impl(line4)->id == "ABSMaps");
 static_assert(parse_impl(line4)->version == "1.071229");
 static_assert(parse_impl(line4)->name == "Maps by American Bible Society (1888)");
 
+constexpr std::string_view line5 {"id]  	(1.1)  	- Name"};
+static_assert(not parse_impl(line5));
+constexpr std::string_view line6 {"[id  	(1.1)  	- Name"};
+static_assert(not parse_impl(line6));
+constexpr std::string_view line7 {"[id]  	1.1)  	- Name"};
+static_assert(not parse_impl(line7));
+constexpr std::string_view line8 {"[id]  	(1.1  	- Name"};
+static_assert(not parse_impl(line8));
+
 }
 
 
-
-
-std::optional<info> parse (std::string_view line) noexcept
+std::optional<info> parse (const std::string_view line) noexcept
 {
     return parse_impl(line);
 }
