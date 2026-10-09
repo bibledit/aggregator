@@ -135,6 +135,7 @@ target_sources(library
 		curl.cpp
 		logger.cpp
 		sword/sword.cpp
+		sword/store.cpp
 		utilities.cpp
 	PUBLIC
 	FILE_SET HEADERS
@@ -143,6 +144,7 @@ target_sources(library
 		curl.h
 		logger.h
 		sword/sword.h
+		sword/store.h
 		utilities.h
 )
 
@@ -171,10 +173,19 @@ add_compile_definitions(
 
 # The required system libraries.
 find_package(CURL 8.0.0 REQUIRED)
-target_link_libraries(aggregator PRIVATE CURL::libcurl)
-target_link_libraries(unittest PRIVATE CURL::libcurl)
 find_package(GTest 1.10.0 REQUIRED)
-target_link_libraries(unittest PRIVATE GTest::gtest)
+find_package(nlohmann_json 3.10.0 REQUIRED)
+target_link_libraries(library PRIVATE
+	nlohmann_json::nlohmann_json # Header-only, needed at compile time, not link time.
+)
+target_link_libraries(aggregator PRIVATE
+	CURL::libcurl
+)
+target_link_libraries(unittest PRIVATE
+	CURL::libcurl
+	GTest::gtest
+)
+
 
 
 # Installation.
