@@ -67,3 +67,4 @@ vcpkg_installed/
 Testing/
 .cache/
 sword/store.json
+data/modules.json

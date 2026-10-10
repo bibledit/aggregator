@@ -22,7 +22,8 @@
 #include <map>
 #include <vector>
 
-#include "../store.h"
+#include "store.h"
+#include "sword.h"
 
 class Sword
 {

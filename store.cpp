@@ -23,7 +23,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <vector>
+#include <list>
 #include "logger.h"
 #include "utilities.h"
 #include "exception.h"
@@ -37,7 +37,7 @@ Store::Store(const std::optional<std::filesystem::path>& alternate_store_path)
     if (alternate_store_path)
         m_path = *alternate_store_path;
     else
-        m_path = std::filesystem::path(SOURCE_DIR) / "sword" / "store.json";
+        m_path = std::filesystem::path(SOURCE_DIR) / "data" / "modules.json";
 
     load_from_file();
 }
@@ -48,7 +48,7 @@ Store::~Store()
 }
 
 // Generates to_json() and from_json() for struct Module.
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Module, source, identifier, version, name)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Module, id, type, source, abbrev, version, name)
 
 void Store::load_from_file()
 {
@@ -61,9 +61,9 @@ void Store::load_from_file()
     try {
         // Parse without exceptions first, to be able to report problems.
         const nlohmann::json json = nlohmann::json::parse(stream, nullptr, true);
-        m_modules = json.get<std::vector<Module>>();
+        m_modules = json.get<std::list<Module>>();
     }
-    catch (const nlohmann::json::exception& e) {
+    catch (const nlohmann::json::exception&) {
         logger::plain("Cannot load SWORD modules from", m_path, ":", "Start with empty list of modules");
         m_modules.clear();
     }
@@ -95,38 +95,63 @@ void Store::save_to_file() const
     }
 }
 
-void Store::add_or_replace(const Module& module)
+void Store::add_or_update(const Module& module)
 {
-    // A module is uniquely identified by its source and identifier.
+    // A module is uniquely identified by its type, source and abbreviation.
     const auto same_module = [&module](const Module& existing) {
-        return existing.source == module.source and existing.identifier == module.identifier;
+        return existing.type == module.type and existing.source == module.source and existing.abbrev == module.abbrev;
     };
 
     if (const auto iter = std::ranges::find_if(m_modules, same_module); iter != m_modules.cend()) {
-        *iter = module; // Replace in place, keeping the position.
+        // Update: Check that the id of the incoming module is the same as the existing module.
+        if (iter->id != module.id)
+            throw Base("Failed to update the store with a module with id", module.id, "whereas the store has id", iter->id);
+        // Update in place, iterator remains valid.
+        *iter = module;
     } else {
-        m_modules.push_back(module); // Not present: add at the end.
+        // Add: Check that the incoming id does not yet exist in the store.
+        if (get_module(module.id))
+            throw Base("Failed to add module with id", module.id, "because this id already exists in the store");
+        // Not present: add at the end.
+        m_modules.push_back(module);
     }
 }
 
 
-[[nodiscard]] std::optional<Module> Store::get_module(const std::string& source, const std::string& identifier) const
+[[nodiscard]] std::optional<Module> Store::get_module(const Type type, const std::string& source, const std::string& abbrev) const
 {
-    // A module is uniquely identified by its source and identifier.
-    const auto same_module = [&source, &identifier](const Module& existing) {
-        return existing.source == source and existing.identifier == identifier;
+    // A module is uniquely identified by its type, source and identifier.
+    const auto match = [type, &source, &abbrev](const Module& existing) {
+        return existing.type == type and existing.source == source and existing.abbrev == abbrev;
     };
 
-    if (const auto iter = std::ranges::find_if(m_modules, same_module); iter != m_modules.cend())
+    if (const auto iter = std::ranges::find_if(m_modules, match); iter != m_modules.cend())
         return *iter; // Found.
 
     return {}; // Not found.
 }
 
 
-[[nodiscard]] std::size_t Store::count(const std::string& source) const
+[[nodiscard]] std::optional<Module> Store::get_module(const int id) const
 {
-    return static_cast<decltype(count(source))>(std::ranges::count(m_modules, source, &Module::source));
+    if (const auto iter = std::ranges::find(m_modules, id, &Module::id); iter != m_modules.cend())
+        return *iter;
+    return {};
+}
+
+
+[[nodiscard]] std::size_t Store::count(const Type type) const
+{
+    return static_cast<decltype(count(type))>(std::ranges::count(m_modules, type, &Module::type));
+}
+
+
+[[nodiscard]] std::size_t Store::count(const Type type, const std::string& source) const
+{
+    const auto compare = [&](const Module& module) {
+        return module.type == type and module.source == source;
+    };
+    return static_cast<decltype(count(type,source))>(std::ranges::count_if(m_modules, compare));
 }
 
 

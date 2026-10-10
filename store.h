@@ -19,16 +19,24 @@
 
 #pragma once
 #include <filesystem>
+#include <list>
 #include <optional>
 #include <string>
-#include <vector>
 
 namespace store {
 
+enum class Type
+{
+    none = 0,
+    sword = 1,
+};
+
 struct Module
 {
+    int id{}; // The identifier, increasing with each new module.
+    Type type{}; // The module type, e.g. sword.
     std::string source{}; // Remote SWORD source, e.g. "Crosswire".
-    std::string identifier{}; // Module identifier, e.g. "GNB2026".
+    std::string abbrev{}; // Module identifier, e.g. "GNB2026".
     std::string version{}; // Module version, e.g. "1.2".
     std::string name{}; // Module name, e.g. "Great News Bible".
     constexpr std::strong_ordering operator<=>(const Module&) const = default;
@@ -41,14 +49,16 @@ public:
     Store() = delete;
     ~Store();
     void save_to_file() const;
-    void add_or_replace(const Module&);
+    void add_or_update(const Module&);
     [[nodiscard]] std::size_t count() const { return m_modules.size(); }
-    [[nodiscard]] std::size_t count(const std::string&) const;
-    [[nodiscard]] std::optional<Module> get_module(const std::string& source, const std::string& identifier) const;
+    [[nodiscard]] std::size_t count(Type) const;
+    [[nodiscard]] std::size_t count(Type, const std::string& source) const;
+    [[nodiscard]] std::optional<Module> get_module(Type, const std::string& source, const std::string& abbrev) const;
+    [[nodiscard]] std::optional<Module> get_module(int id) const;
     constexpr bool operator==(const Store& other) const { return m_modules == other.m_modules; }
 private:
     void load_from_file();
-    std::vector<Module> m_modules{};
+    std::list<Module> m_modules{}; // Iterators to existing data should always remain valid.
     std::filesystem::path m_path{};
 };
 
