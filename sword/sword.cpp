@@ -95,19 +95,11 @@ void Sword::fetch_modules()
         {
             if (const std::optional<sword::info> info = sword::parse (line))
             {
-                store::Module module {
-                    .id = 0, // Todo
-                    .type = store::Type::sword,
-                    .source = remote_source,
-                    .abbrev = std::string(info.value().id),
-                    .version = std::string(info.value().version),
-                    .name = std::string(info.value().name)
-                };
-                m_store.add_or_update(module);
+                m_sources_modules[remote_source].push_back(*info);
                 logger::plain(line);
             }
         }
-        logger::plain(remote_source, ":", m_store.count(store::Type::sword, remote_source), "modules");
+        logger::plain(remote_source, ":", m_sources_modules[remote_source].size(), "modules");
     }
 }
 
