@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <exception>
 #include <string>
-#include <string_view>
+#include <sstream>
 
 template <typename Arg>
 concept one_parameter_stream_writable = requires (std::ostream& os, const Arg& arg)
