@@ -164,6 +164,7 @@ add_executable(unittest
 	unittests/storage.cpp
 	unittests/sword.cpp
 	unittests/data.cpp
+	unittests/utilities.cpp
 )
 target_link_libraries(unittest PRIVATE library)
 

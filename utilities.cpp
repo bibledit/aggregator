@@ -16,12 +16,14 @@ Copyright (©) 2026-2026 Teus Benschop.
  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <charconv>
 #include <fstream>
 #include "utilities.h"
 
 #include <ranges>
 #include <sstream>
 #include <vector>
+#include "exception.h"
 
 namespace utilities {
 
@@ -121,6 +123,28 @@ void trim(std::string& s)
     //     start = pos + 1;
     // }
     return parts;
+}
+
+
+[[nodiscard]] unsigned int get_next_id(const std::optional<std::filesystem::path>& test_path)
+{
+    // Path may be passed (for unit tests), otherwise use production location.
+    const auto path = test_path.value_or(std::filesystem::path(SOURCE_DIR) / "data" / "id.txt");
+
+    std::string text = file_get_contents(path);
+    trim(text);
+    if (text.empty()) // Handle initial empty file.
+        text = "0";
+
+    decltype(get_next_id()) id{};
+    const auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), id);
+    if (ec != std::errc())
+        throw Base("Invalid id file", path.string());
+    ++id; // Next ID.
+
+    file_put_contents(path, std::to_string(id)); // Store for next ID fetch.
+
+    return id;
 }
 
 

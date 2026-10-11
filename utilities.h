@@ -19,6 +19,7 @@ Copyright (©) 2026-2026 Teus Benschop.
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -42,8 +43,8 @@ template <typename... Parts>
 [[nodiscard]] std::filesystem::path tmp_file();
 int shell_run (std::string command, std::string& out_err);
 void trim(std::string& s);
-[[nodiscard]] std::vector<std::string> explode_lines(std::string_view text, const char delimiter);
-
+[[nodiscard]] std::vector<std::string> explode_lines(std::string_view text, char delimiter);
+[[nodiscard]] unsigned int get_next_id(const std::optional<std::filesystem::path>& test_path = std::nullopt);
 
 
 }
