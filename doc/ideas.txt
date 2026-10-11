@@ -45,3 +45,8 @@ Ook een gewone bijbel app maken en bij dertig dagen lezen geeft die in do over d
 
 App bespreken via Weet Magazine voor verdere verspreiding.
 
+Make the URL dependent in time stamp of html response
+and keep history of some valid urls and change once in a day or so or twice
+
+Na dertig dagen lezen komt er notificatie over de veiligere app
+en die kan gedeeld worden naar whatsapp etc en na weer dertig dagen lezen weer enzovoorts.

@@ -28,14 +28,16 @@ int main(int argc, char* argv[])
     try
     {
         logger::plain("Aggregator", VERSION);
+        store::Store store{std::nullopt};
         const Arguments arguments(argc, argv);
 
         if (not arguments.sword().empty())
         {
-            Sword sword;
+            Sword sword(store);
             sword.initialize();
             sword.fetch_remote_sources();
             sword.fetch_modules();
+            sword.download_or_update_modules();
         }
 
         return EXIT_SUCCESS;

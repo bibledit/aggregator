@@ -21,7 +21,6 @@
 
 #include <map>
 #include <vector>
-
 #include "store.h"
 #include "sword.h"
 
@@ -32,24 +31,27 @@ struct info;
 class Sword
 {
 public:
+    explicit Sword(store::Store& store) : m_store(store) {}
+    Sword() = delete;
     void initialize();
     void fetch_remote_sources();
     void fetch_modules();
+    void download_or_update_modules();
+    [[nodiscard]] bool download_required(const std::string& remote_source, const sword::info& info) const;
 private:
     std::string out_err{};
-    // The remote sources.
-    std::vector<std::string> m_remote_sources{};
-    // The modules store.
-    std::map<std::string, std::vector<sword::info>> m_sources_modules{};
+    std::vector<std::string> m_remote_sources{}; // The remote sources.
+    std::map<std::string, std::vector<sword::info>> m_sources_modules{}; // The remote modules.
+    store::Store& m_store; // The general store.
 };
 
 namespace sword {
 
 struct info
 {
-    std::string_view id{};
-    std::string_view version{};
-    std::string_view name{};
+    std::string abbrev{};
+    std::string version{};
+    std::string name{};
 };
 
 

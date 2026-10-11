@@ -159,6 +159,7 @@ target_link_libraries(aggregator PRIVATE library)
 # The unit tests executable
 add_executable(unittest
 	unittests/main.cpp
+	unittests/storage.cpp
 	unittests/sword.cpp
 )
 target_link_libraries(unittest PRIVATE library)

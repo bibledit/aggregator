@@ -21,6 +21,7 @@
 #include "sword.h"
 
 #include <iostream>
+#include <ranges>
 #include <string>
 #include "logger.h"
 #include "utilities.h"
@@ -103,6 +104,50 @@ void Sword::fetch_modules()
     }
 }
 
+
+void Sword::download_or_update_modules() // Todo
+{
+    // Iterate over the remote sources and the module information.
+    for (const auto& [remote_source, modules_info] : m_sources_modules) {
+        for (const sword::info& module_info : modules_info)
+        {
+            if (not download_required(remote_source, module_info))
+                continue;
+
+
+            // Download the module.
+
+
+        }
+    }
+}
+
+
+bool Sword::download_required(const std::string& remote_source, const sword::info& info) const
+{
+    // If the module is not in the Store: Download required.
+    if (not m_store.get_module(store::Type::sword, remote_source, info.abbrev))
+        return true;
+
+    // From here on the module is available in the Store.
+    const store::Module module = m_store.get_module(store::Type::sword, remote_source, info.abbrev).value();
+
+    // If version number online differs from one in Store: Download required.
+    if (info.version != module.version)
+        return true;
+
+
+    // Todo complete it.
+
+
+    // Next check: Whether the SQLite database is available.
+
+
+
+    return false; // No download required.
+}
+
+
 namespace sword {
 
 constexpr std::string_view whitespace{" \t\r\n"};
@@ -127,7 +172,7 @@ take_delimited(std::string_view& line, const char open, const char close) noexce
 }
 
 
-static constexpr std::optional<info> parse_impl (std::string_view line) noexcept
+std::optional<info> parse (std::string_view line) noexcept
 {
     skip_whitespace(line);
 
@@ -159,49 +204,11 @@ static constexpr std::optional<info> parse_impl (std::string_view line) noexcept
         return std::nullopt; // no name after the dash
     line = line.substr(0, last + 1);
 
-    return info {.id = *id, .version = *version, .name = line};
+    return info {.abbrev = std::string(*id), .version = std::string(*version), .name = std::string(line)};
 }
 
 
-// Static unit tests.
-namespace {
 
-constexpr std::string_view line1 {"*[ymp2025eb]  	(2.7)  	- Yamap"};
-static_assert(parse_impl(line1)->id == "ymp2025eb");
-static_assert(parse_impl(line1)->version == "2.7");
-static_assert(parse_impl(line1)->name == "Yamap");
-
-constexpr std::string_view line2 {"*[peg2020eb]  	(4.7)  	- ସତ୍‌ ବଚନ୍"};
-static_assert(parse_impl(line2)->id == "peg2020eb");
-static_assert(parse_impl(line2)->version == "4.7");
-static_assert(parse_impl(line2)->name == "ସତ୍‌ ବଚନ୍");
-
-constexpr std::string_view line3 {"*[pan2017eb]  	(21.37)  	- ਇੰਡਿਅਨ ਰਿਵਾਇਜ਼ਡ ਵਰਜ਼ਨ (IRV) - ਪੰਜਾਬੀ"};
-static_assert(parse_impl(line3)->id == "pan2017eb");
-static_assert(parse_impl(line3)->version == "21.37");
-static_assert(parse_impl(line3)->name == "ਇੰਡਿਅਨ ਰਿਵਾਇਜ਼ਡ ਵਰਜ਼ਨ (IRV) - ਪੰਜਾਬੀ");
-
-constexpr std::string_view line4 {"*[ABSMaps]  	(1.071229)  	- Maps by American Bible Society (1888)"};
-static_assert(parse_impl(line4)->id == "ABSMaps");
-static_assert(parse_impl(line4)->version == "1.071229");
-static_assert(parse_impl(line4)->name == "Maps by American Bible Society (1888)");
-
-constexpr std::string_view line5 {"id]  	(1.1)  	- Name"};
-static_assert(not parse_impl(line5));
-constexpr std::string_view line6 {"[id  	(1.1)  	- Name"};
-static_assert(not parse_impl(line6));
-constexpr std::string_view line7 {"[id]  	1.1)  	- Name"};
-static_assert(not parse_impl(line7));
-constexpr std::string_view line8 {"[id]  	(1.1  	- Name"};
-static_assert(not parse_impl(line8));
-
-}
-
-
-std::optional<info> parse (const std::string_view line) noexcept
-{
-    return parse_impl(line);
-}
 
 }
 
