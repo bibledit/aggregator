@@ -71,7 +71,7 @@ void Data::load(const std::optional<std::filesystem::path>& path)
     const json j = json::parse(in);   // throws json::parse_error on bad input
 
     // Parse into locals first: Malformed file leaves the object unchanged.
-    const auto id        = j.at("id").get<unsigned int>();
+    const auto id        = j.at("id").get<int>();
     const auto timestamp = j.at("timestamp").get<std::uint64_t>();
 
     std::vector<VerseText> verses;
@@ -202,5 +202,12 @@ std::string_view Data::get_case_fold(const unsigned short book, const unsigned s
     const auto* v = find(book, chapter, verse);
     return v ? std::string_view{v->case_fold} : std::string_view{};
 }
+
+
+[[nodiscard]] std::filesystem::path Data::storage_path() const
+{
+    return std::filesystem::path(SOURCE_DIR) / "data" / std::string(std::to_string(m_id) + ".module");
+}
+
 
 }

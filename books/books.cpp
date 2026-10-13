@@ -74,4 +74,14 @@ std::vector<std::string> get_all_osis()
 }
 
 
+std::vector<std::string> get_all_osis(const BookType book_type)
+{
+    auto&& view = books
+        | std::views::filter([book_type](const Book& book) { return book.type == book_type; })
+        | std::views::transform(&Book::osis)
+        | std::views::filter([](const std::string& s) { return not s.empty(); });
+    return {view.begin(), view.end()};
+}
+
+
 }

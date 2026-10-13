@@ -36,13 +36,16 @@ public:
     void initialize();
     void fetch_remote_sources();
     void fetch_modules();
-    void download_or_update_modules();
+    void leave_or_download_or_update_modules();
     [[nodiscard]] bool download_required(const std::string& remote_source, const sword::info& info) const;
+    void import_module(const sword::info& info); // Todo make private.
 private:
     std::string out_err{};
     std::vector<std::string> m_remote_sources{}; // The remote sources.
     std::map<std::string, std::vector<sword::info>> m_sources_modules{}; // The remote modules.
     store::Store& m_store; // The general store.
+    void install_module(const std::string& remote_source, const sword::info& info);
+    void uninstall_module(const sword::info& info);
 };
 
 namespace sword {

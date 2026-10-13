@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #include <ostream>
 #include "arguments.h"
 #include "logger.h"
+#include "books/books.h"
 #include "sword/sword.h"
 
 int main(int argc, char* argv[])
@@ -29,15 +30,24 @@ int main(int argc, char* argv[])
     {
         logger::plain("Aggregator", VERSION);
         store::Store store{std::nullopt};
+        books::load();
         const Arguments arguments(argc, argv);
-
         if (not arguments.sword().empty())
         {
-            Sword sword(store);
+            Sword sword(store); // Todo enable.
             sword.initialize();
-            sword.fetch_remote_sources();
-            sword.fetch_modules();
-            sword.download_or_update_modules();
+            // sword.fetch_remote_sources();
+            // sword.fetch_modules();
+            // sword.leave_or_download_or_update_modules();
+
+            sword::info info {
+                .abbrev = "NETfree",
+                .version = "1.0",
+                .name = "NET Bible free"
+            };
+            sword.import_module(info);
+
+
         }
 
         return EXIT_SUCCESS;

@@ -39,7 +39,7 @@ struct VerseText
 
 class Data
 {
-    unsigned int m_id {};
+    int m_id {};
     std::uint64_t m_timestamp {};
     std::vector<VerseText> m_data{};
 public:
@@ -59,6 +59,7 @@ public:
     [[nodiscard]] std::string_view get_text(unsigned short book, unsigned short chapter, unsigned short verse) const noexcept;
     [[nodiscard]] std::string_view get_case_fold(unsigned short book, unsigned short chapter,
                                                  unsigned short verse) const noexcept;
+    [[nodiscard]] std::filesystem::path storage_path() const;
     constexpr std::strong_ordering operator<=>(const Data&) const = default;
 private:
     [[nodiscard]] std::filesystem::path get_path(std::optional<std::filesystem::path> path = std::nullopt) const;

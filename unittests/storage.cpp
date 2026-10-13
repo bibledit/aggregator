@@ -122,7 +122,7 @@ TEST_F(storage, add_or_replace)
 }
 
 
-TEST_F(storage, only_type_differs) // Todo fix.
+TEST_F(storage, only_type_differs)
 {
     constexpr store::Module module10 {
         .id = 10,

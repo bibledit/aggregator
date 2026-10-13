@@ -36,4 +36,12 @@ TEST_F(test_books, basic)
     const auto osis = books::get_all_osis();
     EXPECT_EQ(osis.size(), 84);
     EXPECT_TRUE(std::ranges::find(osis, "John") != osis.cend());
+
+    const auto osis_ot = books::get_all_osis(books::BookType::OldTestament);
+    EXPECT_EQ(osis_ot.size(), 39);
+    EXPECT_TRUE(std::ranges::find(osis_ot, "Deut") != osis_ot.cend());
+
+    const auto osis_nt = books::get_all_osis(books::BookType::NewTestament);
+    EXPECT_EQ(osis_nt.size(), 27);
+    EXPECT_TRUE(std::ranges::find(osis_nt, "John") != osis_nt.cend());
 }

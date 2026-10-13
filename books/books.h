@@ -28,6 +28,7 @@ enum class BookType { OldTestament, NewTestament, Apocrypha, FrontBack, Other };
 void load();
 std::size_t count();
 std::vector<std::string> get_all_osis();
+std::vector<std::string> get_all_osis(BookType);
 
 
 

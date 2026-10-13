@@ -23,11 +23,16 @@
 #include <iostream>
 #include <ranges>
 #include <string>
+#include <__thread/this_thread.h>
+
+#include "data.h"
+#include "exception.h"
 #include "logger.h"
 #include "utilities.h"
+#include "books/books.h"
 
 
-[[nodiscard]] static std::string get_path()
+[[nodiscard]] static std::string get_sword_install_mgr_path()
 {
     return std::filesystem::path{utilities::home_directory()} / ".sword" / "InstallMgr";
 }
@@ -38,7 +43,7 @@ void Sword::initialize()
     logger::plain("Initialize SWORD structures");
 
     // Initialize SWORD directory structure and configuration.
-    const std::string sword_path = get_path();
+    const std::string sword_path = get_sword_install_mgr_path();
     const std::filesystem::path path(sword_path);
     logger::plain ("Initialize SWORD in", path);
     std::filesystem::create_directories(path);
@@ -79,6 +84,7 @@ void Sword::fetch_remote_sources()
         line.pop_back();
         m_remote_sources.emplace_back(line);
         logger::plain(line);
+        return; // Todo remove later.
     }
 }
 
@@ -105,7 +111,7 @@ void Sword::fetch_modules()
 }
 
 
-void Sword::download_or_update_modules() // Todo
+void Sword::leave_or_download_or_update_modules() // Todo
 {
     // Iterate over the remote sources and the module information.
     for (const auto& [remote_source, modules_info] : m_sources_modules) {
@@ -113,11 +119,9 @@ void Sword::download_or_update_modules() // Todo
         {
             if (not download_required(remote_source, module_info))
                 continue;
-
-
-            // Download the module.
-
-
+            install_module(remote_source, module_info);
+            import_module(module_info);
+            uninstall_module(module_info);
         }
     }
 }
@@ -136,15 +140,83 @@ bool Sword::download_required(const std::string& remote_source, const sword::inf
     if (info.version != module.version)
         return true;
 
+    // Get the module identifier from the Store.
+    // Check whether the module file is available from disk.
+    // If not: Download required.
+    data::Data data;
+    data.id(module.id);
+    if (not std::filesystem::is_regular_file(data.storage_path()))
+        return true;
 
-    // Todo complete it.
-
-
-    // Next check: Whether the SQLite database is available.
-
-
+    // If the module file cannot be read: Download required.
+    try
+    {
+        data.load(std::nullopt);
+    }
+    catch (const std::exception& exception)
+    {
+        logger::plain("Cannot read the module file:", exception.what());
+        return true;
+    }
 
     return false; // No download required.
+}
+
+
+void Sword::install_module(const std::string& remote_source, const sword::info& info)
+{
+    logger::plain ("Install SWORD module", info.abbrev, "from source", remote_source);
+
+    // Installation through SWORD InstallMgr binary "installmgr" works
+    // when running it from the ~/.sword/InstallMgr directory.
+    const std::string command = "cd " + get_sword_install_mgr_path() + "; installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -ri \"" + remote_source + "\" \"" + info.abbrev + "\"";
+    logger::plain(command);
+    utilities::shell_run(command, out_err);
+    utilities::trim(out_err);
+    logger::plain(out_err);
+}
+
+
+void Sword::import_module(const sword::info& info) // Todo write it.
+{
+    logger::plain("Importing SWORD module", info.name, "version", info.version);
+
+    // Run "diatheke" from the SWORD installation directory, else it fails.
+    const std::string sword_path = get_sword_install_mgr_path();
+
+    // The server fetches the module text as follows: diatheke -b KJV -k Jn 3:16
+    // This gets the entire book of John: diatheke -b NETfree -o -n -k Jn
+    // To include more notes, run this instead: $ diatheke -b KJV -o n -k Jn 3:16
+
+    constexpr std::array book_types {books::BookType::OldTestament, books::BookType::NewTestament};
+    for (const auto book_type : book_types)
+    {
+        for (const auto& osis : books::get_all_osis(book_type))
+        {
+            std::string parameters;
+            parameters.append("-b " + info.abbrev + " -o ");
+            parameters.append("n"); // Keep OSIS content.
+            // Hebrew cantillation / Hebrew vowels / Greek accents / Arabic vowels / Arabic shaping.
+            parameters.append("cvapr");
+            parameters.append(" -k ");
+            parameters.append(osis);
+            if (const int result = utilities::shell_run("cd " + sword_path + "; diatheke " + parameters, out_err); result != 0)
+            {
+                logger::plain(out_err);
+                throw Base("Error fetching SWORD data from module", info.abbrev, "book", osis);
+            }
+        }
+    }
+}
+
+
+void Sword::uninstall_module(const sword::info& info)
+{
+    logger::plain ("Uninstall SWORD module", info.abbrev);
+    const std::string command = "cd " + get_sword_install_mgr_path() + "; installmgr -u \"" + info.abbrev + "\"";
+    utilities::shell_run(command, out_err);
+    utilities::trim(out_err);
+    logger::plain (out_err);
 }
 
 
@@ -208,288 +280,9 @@ std::optional<info> parse (std::string_view line) noexcept
 }
 
 
-
-
 }
 
 
-
-// // Gets the name of the remote source of the $line like this:
-// // [CrossWire] *[Shona] (1.1) - Shona Bible
-// std::string sword_logic_get_source (std::string line)
-// {
-//   if (line.length () < 10) return std::string();
-//   line.erase (0, 1);
-//   size_t pos = line.find ("]");
-//   if (pos == std::string::npos) return std::string();
-//   line.erase (pos);
-//   return line;
-// }
-//
-//
-// // Gets the module name of the $line like this:
-// // [CrossWire] *[Shona] (1.1) - Shona Bible
-// std::string sword_logic_get_remote_module (std::string line)
-// {
-//   if (line.length () < 10) return std::string();
-//   line.erase (0, 2);
-//   if (line.length () < 10) return std::string();
-//   size_t pos = line.find ("[");
-//   if (pos == std::string::npos) return std::string();
-//   line.erase (0, pos + 1);
-//   pos = line.find ("]");
-//   if (pos == std::string::npos) return std::string();
-//   line.erase (pos);
-//   return line;
-// }
-//
-//
-// // Gets the module name of the $line like this:
-// // [Shona]  (1.1)  - Shona Bible
-// std::string sword_logic_get_installed_module (std::string line)
-// {
-//   line = filter::string::trim (line);
-//   if (line.length () > 10) {
-//     line.erase (0, 1);
-//     size_t pos = line.find ("]");
-//     if (pos != std::string::npos) line.erase (pos);
-//   }
-//   return line;
-// }
-//
-//
-// // Gets the version number of a module of the $line like this:
-// // [Shona]  (1.1)  - Shona Bible
-// std::string sword_logic_get_version (std::string line)
-// {
-//   line = filter::string::trim (line);
-//   if (line.length () > 10) {
-//     line.erase (0, 3);
-//   }
-//   if (line.length () > 10) {
-//     size_t pos = line.find ("(");
-//     if (pos != std::string::npos) line.erase (0, pos + 1);
-//     pos = line.find (")");
-//     if (pos != std::string::npos) line.erase (pos);
-//   }
-//   return line;
-// }
-//
-//
-// // Gets the human-readable name of a $line like this:
-// // [CrossWire] *[Shona] (1.1) - Shona Bible
-// std::string sword_logic_get_name (std::string line)
-// {
-//   std::vector <std::string> bits = filter::string::explode (line, '-');
-//   if (bits.size () >= 2) {
-//     bits.erase (bits.begin ());
-//   }
-//   line = filter::string::implode (bits, "-");
-//   line = filter::string::trim (line);
-//   return line;
-// }
-//
-//
-// // Schedule SWORD module installation.
-// void sword_logic_install_module_schedule (const std::string& source, const std::string& module)
-// {
-//   // No source: Done.
-//   if (source.empty ()) return;
-//
-//   // No module: Done.
-//   // There have been cases with more than 6000 scheduled SWORD module installation tasks,
-//   // all trying to install an empty $module.
-//   // So it's important to check on that.
-//   if (module.empty ()) return;
-//
-//   // Check whether the module installation has been scheduled already.
-//   if (tasks::tasks_logic_queued (tasks::enums::task::install_sword_module, {source, module})) return;
-//
-//   // Schedule it.
-//   tasks::tasks_logic_queue (tasks::enums::task::install_sword_module, {source, module});
-// }
-//
-//
-// void sword_logic_install_module (const std::string& source_name, const std::string& module_name)
-// {
-//   logger::plain ("Install SWORD module", module_name, "from source", source_name);
-//   std::string sword_path {sword_logic_get_path ()};
-//
-//   // Installation through SWORD InstallMgr does not yet work.
-//   // When running it from the ~/.sword/InstallMgr directory, it works.
-// #ifdef HAVE_SWORD
-//
-//   sword::SWMgr *mgr = new sword::SWMgr();
-//
-//   sword::SWBuf baseDir = sword_logic_get_path ().c_str ();
-//
-//   sword::InstallMgr *installMgr = new sword::InstallMgr (baseDir, NULL);
-//   installMgr->setUserDisclaimerConfirmed (true);
-//
-//   sword::InstallSourceMap::iterator source = installMgr->sources.find(source_name.c_str ());
-//   if (source == installMgr->sources.end()) {
-//     logger::plain ("Could not find remote source", source_name);
-//   } else {
-//     sword::InstallSource *is = source->second;
-//     sword::SWMgr *rmgr = is->getMgr();
-//     sword::SWModule *module;
-//     sword::ModMap::iterator it = rmgr->Modules.find(module_name.c_str());
-//     if (it == rmgr->Modules.end()) {
-//       logger::plain ("Remote source", source_name, "does not make available module", module_name);
-//     } else {
-//       module = it->second;
-//       int error = installMgr->installModule(mgr, 0, module->getName(), is);
-//       if (error) {
-//         logger::plain ("Error installing module", module_name);
-//       } else {
-//         logger::plain ("Installed module", module_name);
-//       }
-//     }
-//   }
-//
-//   delete installMgr;
-//   delete mgr;
-//
-// #else
-//
-//   std::string out_err {};
-//   std::string command = "cd " + sword_path + "; " + std::string(filter::shell::get_executable(filter::shell::Executable::installmgr))+ " --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -ri \"" + source_name + "\" \"" + module_name + "\"";
-//   logger::plain (command);
-//   filter::shell::run (command, out_err);
-//   sword_logic_log (out_err);
-//
-// #endif
-//
-//   // After the installation is complete, write some temporal some data.
-//   // This temporal data indicates the last access time for this SWORD module.
-//   {
-//     const std::string path = sword_logic_access_tracker (module_name);
-//     filter_url_file_put_contents (path, "SWORD");
-//   }
-// }
-//
-//
-// void sword_logic_uninstall_module (const std::string& module)
-// {
-//   logger::plain ("Uninstall SWORD module", module);
-//   std::string out_err;
-//   const std::string sword_path {sword_logic_get_path ()};
-//   filter::shell::run ("cd " + sword_path + "; " + std::string(filter::shell::get_executable(filter::shell::Executable::installmgr)) + " -u \"" + module + "\"", out_err);
-//   sword_logic_log (out_err);
-// }
-//
-//
-
-//
-// // Get installed SWORD modules.
-// std::vector <std::string> sword_logic_get_installed ()
-// {
-//   std::vector <std::string> modules {};
-//   std::string out_err {};
-//   const std::string sword_path {sword_logic_get_path ()};
-//   filter::shell::run ("cd " + sword_path + "; " + std::string(filter::shell::get_executable(filter::shell::Executable::installmgr)) + " -l", out_err);
-//   std::vector <std::string> lines = filter::string::explode (out_err, '\n');
-//   for (auto line : lines) {
-//     line = filter::string::trim (line);
-//     if (line.empty ()) continue;
-//     if (line.find ("[") == std::string::npos) continue;
-//     modules.push_back (line);
-//   }
-//   return modules;
-// }
-//
-//
-// std::string sword_logic_get_text (const std::string& source, const std::string& module, const int book, const int chapter, const int verse)
-// {
-// #ifdef HAVE_CLIENT
-//
-//   // The resource name consists of source and module, e.g. [CrossWire][NET].
-//   std::string resource = sword_logic_get_resource_name (source, module);
-//
-//   // Client checks for and optionally creates the cache for this SWORD source/module.
-//   if (!database::cache::sql::exists (resource, book)) {
-//     database::cache::sql::create (resource, book);
-//   }
-//
-//   // If this module/passage exists in the cache, return it (it updates the access days in the cache).
-//   if (database::cache::sql::exists (resource, book, chapter, verse)) {
-//     return database::cache::sql::retrieve (resource, book, chapter, verse);
-//   }
-//
-//   // Fetch this SWORD resource from the server.
-//   std::string address = database::config::general::get_server_address ();
-//   int port = database::config::general::get_server_port ();
-//   if (!client_logic_client_enabled ()) {
-//     // If the client has not been connected to a cloud instance,
-//     // fetch the SWORD content from the Bibledit Cloud demo.
-//     address = demo_address ();
-//     port = demo_port ();
-//   }
-//   const std::string url = filter_url_build_http_query (client_logic_url (address, port, sync_resources_url()), {
-//     {"r", resource},
-//     {"b", std::to_string(book)},
-//     {"c", std::to_string(chapter)},
-//     {"v", std::to_string(verse)},
-//   });
-//   std::string error {};
-//   std::string html = filter_url_http_get (url, error, true);
-//
-//   // In case of an error, don't cache that error, but let the user see it.
-//   if (!error.empty ()) return error;
-//
-//   // Client caches this info for later.
-//   // Except in case of predefined responses from the Cloud.
-//   if (html != sword_logic_installing_module_text ()) {
-//     if (html != sword_logic_fetch_failure_text ()) {
-//       database::cache::sql::cache (resource, book, chapter, verse, html);
-//     }
-//   }
-//
-//   return html;
-//
-// #else
-//
-//   std::string module_text;
-//   bool module_available {false};
-//
-//   const std::string osis = database::books::get_osis_from_id (static_cast<book_id>(book));
-//   const std::string chapter_verse = std::to_string (chapter) + ":" + std::to_string (verse);
-//
-//   // See notes on function sword_logic_diatheke
-//   // for why it is not currently fetching content via a SWORD library call.
-//   // module_text = sword_logic_diatheke (module, osis, chapter, verse, module_available);
-//
-//   // Running diatheke only works when it runs in the SWORD installation directory.
-//   const std::string sword_path = sword_logic_get_path ();
-//   // Running several instances of diatheke simultaneously fails.
-//   sword_logic_diatheke_run_mutex.lock ();
-//   // The server fetches the module text as follows:
-//   // diatheke -b KJV -k Jn 3:16
-//   // To included, run this instead: $ diatheke -b KJV -o n -k Jn 3:16
-//   std::vector <std::string> parameters {"-b", module};
-//   parameters.push_back("-o");
-//   std::string module_options {};
-//   if (database::config::general::get_keep_osis_content_in_sword_resources ()) {
-//     module_options.append("n");
-//   }
-//   module_options.append("cvapr"); // Hebrew cantillation / Hebrew vowels / Greek accents / Arabic vowels / Arabic shaping.
-//   parameters.push_back(module_options);
-//   parameters.push_back("-k");
-//   parameters.push_back(osis);
-//   parameters.push_back(chapter_verse);
-//   std::string error {};
-//   const int result = filter::shell::run (sword_path, std::string(filter::shell::get_executable(filter::shell::Executable::diatheke)), parameters, &module_text, &error);
-//   module_text.append (error);
-//   sword_logic_diatheke_run_mutex.unlock ();
-//   if (result != 0) return sword_logic_fetch_failure_text ();
-//
-//   // Touch the temporal file
-//   // so the server knows that the module has been accessed just now
-//   // and won't uninstall it too soon.
-//   {
-//     const std::string path = sword_logic_access_tracker (module);
-//     filter_url_file_put_contents (path, "access");
-//   }
 //
 //   // If the module has not been installed, the output of "diatheke" will be empty.
 //   // If the module was installed, but the requested passage is out of range,
@@ -588,103 +381,6 @@ std::optional<info> parse (std::string_view line) noexcept
 //   return output;
 // }
 //
-//
-// // Checks the installed modules, whether they need to be updated.
-// void sword_logic_update_installed_modules ()
-// {
-//   logger::plain ("Updating installed SWORD modules");
-//
-//   std::vector <std::string> available_modules = sword_logic_get_available ();
-//
-//   std::vector <std::string> installed_modules = sword_logic_get_installed ();
-//   for (const auto& installed_module : installed_modules) {
-//     const std::string module = sword_logic_get_installed_module (installed_module);
-//     const std::string installed_version = sword_logic_get_version (installed_module);
-//     for (const auto& available_module : available_modules) {
-//       if (sword_logic_get_remote_module (available_module) == module) {
-//         if (sword_logic_get_version (available_module) != installed_version) {
-//           const std::string source = sword_logic_get_source (available_module);
-//           // Uninstall module.
-//           sword_logic_uninstall_module (module);
-//           // Schedule module installation.
-//           sword_logic_install_module_schedule (source, module);
-//         }
-//         continue;
-//       }
-//     }
-//   }
-//
-//   logger::plain ("Ready updating installed SWORD modules");
-// }
-//
-//
-// // Trims the installed SWORD modules.
-// void sword_logic_trim_modules ()
-// {
-// #ifdef HAVE_CLOUD
-//   logger::plain ("Trimming the installed SWORD modules");
-//   const std::vector <std::string> modules = sword_logic_get_installed ();
-//   for (auto module : modules) {
-//     module = sword_logic_get_installed_module (module);
-//     const std::string path = sword_logic_access_tracker (module);
-//     if (!file_or_dir_exists (path)) {
-//       sword_logic_uninstall_module (module);
-//     }
-//   }
-//   logger::plain ("Ready trimming the SWORD caches and modules");
-// #endif
-// }
-//
-//
-// // Tracker for accessing the SWORD module.
-// std::string sword_logic_access_tracker (const std::string& module)
-// {
-//   const std::string path = filter_url_create_root_path ({filter_url_temp_dir (), "sword_access_tracker_" + module});
-//   return path;
-// }
-//
-//
-// // The functions runs a scheduled module installation.
-// // The purpose of this function is that only one module installation occurs at a time,
-// // rather than simultaneously installing modules, which clogs the system.
-// void sword_logic_run_scheduled_module_install (const std::string& source, const std::string& module)
-// {
-//   // If a module is being installed,
-//   // and a call is made for another module installation,
-//   // re-schedule this module installation to postpone it,
-//   // till after this one is ready.
-//   sword_logic_installer_mutex.lock ();
-//   const bool installing = sword_logic_installing_module;
-//   sword_logic_installer_mutex.unlock ();
-//   if (installing) {
-//     sword_logic_install_module_schedule (source, module);
-//     return;
-//   }
-//
-//   // Set flag for current module installation running.
-//   sword_logic_installer_mutex.lock ();
-//   sword_logic_installing_module = true;
-//   sword_logic_installer_mutex.unlock ();
-//
-//   // Run the installer if the module is not yet installed.
-//   const std::vector <std::string> modules {sword_logic_get_installed ()};
-//   bool already_installed = false;
-//   for (const auto& installed_module : modules) {
-//     if (installed_module.find ("[" + module + "]") != std::string::npos) {
-//       already_installed = true;
-//     }
-//   }
-//   if (!already_installed) {
-//     sword_logic_install_module (source, module);
-//   }
-//
-//   // Clear flag as current module installation is ready.
-//   sword_logic_installer_mutex.lock ();
-//   sword_logic_installing_module = false;
-//   sword_logic_installer_mutex.unlock ();
-// }
-//
-//
 
 // std::string sword_logic_clean_verse (const std::string& module, int chapter, int verse, std::string text)
 // {
@@ -714,4 +410,3 @@ std::optional<info> parse (std::string_view line) noexcept
 //   // Done.
 //   return text;
 // }
-//
