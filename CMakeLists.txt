@@ -138,6 +138,7 @@ target_sources(library
 		store.cpp
 		utilities.cpp
 		data.cpp
+		books/books.cpp
 	PUBLIC
 	FILE_SET HEADERS
 	FILES
@@ -148,6 +149,7 @@ target_sources(library
 		store.h
 		utilities.h
 		data.h
+		books/books.h
 )
 
 
@@ -165,6 +167,7 @@ add_executable(unittest
 	unittests/sword.cpp
 	unittests/data.cpp
 	unittests/utilities.cpp
+	unittests/books.cpp
 )
 target_link_libraries(unittest PRIVATE library)
 
