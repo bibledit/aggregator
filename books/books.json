@@ -1,0 +1,765 @@
+[
+  {
+    "english": "Genesis",
+    "order": 3,
+    "osis": "Gen",
+    "type": "ot",
+    "usfm": "GEN"
+  },
+  {
+    "english": "Exodus",
+    "order": 4,
+    "osis": "Exod",
+    "type": "ot",
+    "usfm": "EXO"
+  },
+  {
+    "english": "Leviticus",
+    "order": 5,
+    "osis": "Lev",
+    "type": "ot",
+    "usfm": "LEV"
+  },
+  {
+    "english": "Numbers",
+    "order": 6,
+    "osis": "Num",
+    "type": "ot",
+    "usfm": "NUM"
+  },
+  {
+    "english": "Deuteronomy",
+    "order": 7,
+    "osis": "Deut",
+    "type": "ot",
+    "usfm": "DEU"
+  },
+  {
+    "english": "Joshua",
+    "order": 8,
+    "osis": "Josh",
+    "type": "ot",
+    "usfm": "JOS"
+  },
+  {
+    "english": "Judges",
+    "order": 9,
+    "osis": "Judg",
+    "type": "ot",
+    "usfm": "JDG"
+  },
+  {
+    "english": "Ruth",
+    "order": 10,
+    "osis": "Ruth",
+    "type": "ot",
+    "usfm": "RUT"
+  },
+  {
+    "english": "1 Samuel",
+    "order": 11,
+    "osis": "1Sam",
+    "type": "ot",
+    "usfm": "1SA"
+  },
+  {
+    "english": "2 Samuel",
+    "order": 12,
+    "osis": "2Sam",
+    "type": "ot",
+    "usfm": "2SA"
+  },
+  {
+    "english": "1 Kings",
+    "order": 13,
+    "osis": "1Kgs",
+    "type": "ot",
+    "usfm": "1KI"
+  },
+  {
+    "english": "2 Kings",
+    "order": 14,
+    "osis": "2Kgs",
+    "type": "ot",
+    "usfm": "2KI"
+  },
+  {
+    "english": "1 Chronicles",
+    "order": 15,
+    "osis": "1Chr",
+    "type": "ot",
+    "usfm": "1CH"
+  },
+  {
+    "english": "2 Chronicles",
+    "order": 16,
+    "osis": "2Chr",
+    "type": "ot",
+    "usfm": "2CH"
+  },
+  {
+    "english": "Ezra",
+    "order": 17,
+    "osis": "Ezra",
+    "type": "ot",
+    "usfm": "EZR"
+  },
+  {
+    "english": "Nehemiah",
+    "order": 18,
+    "osis": "Neh",
+    "type": "ot",
+    "usfm": "NEH"
+  },
+  {
+    "english": "Esther",
+    "order": 19,
+    "osis": "Esth",
+    "type": "ot",
+    "usfm": "EST"
+  },
+  {
+    "english": "Job",
+    "order": 20,
+    "osis": "Job",
+    "type": "ot",
+    "usfm": "JOB"
+  },
+  {
+    "english": "Psalms",
+    "order": 21,
+    "osis": "Ps",
+    "type": "ot",
+    "usfm": "PSA"
+  },
+  {
+    "english": "Proverbs",
+    "order": 22,
+    "osis": "Prov",
+    "type": "ot",
+    "usfm": "PRO"
+  },
+  {
+    "english": "Ecclesiastes",
+    "order": 23,
+    "osis": "Eccl",
+    "type": "ot",
+    "usfm": "ECC"
+  },
+  {
+    "english": "Song of Solomon",
+    "order": 24,
+    "osis": "Song",
+    "type": "ot",
+    "usfm": "SNG"
+  },
+  {
+    "english": "Isaiah",
+    "order": 25,
+    "osis": "Isa",
+    "type": "ot",
+    "usfm": "ISA"
+  },
+  {
+    "english": "Jeremiah",
+    "order": 26,
+    "osis": "Jer",
+    "type": "ot",
+    "usfm": "JER"
+  },
+  {
+    "english": "Lamentations",
+    "order": 27,
+    "osis": "Lam",
+    "type": "ot",
+    "usfm": "LAM"
+  },
+  {
+    "english": "Ezekiel",
+    "order": 28,
+    "osis": "Ezek",
+    "type": "ot",
+    "usfm": "EZK"
+  },
+  {
+    "english": "Daniel",
+    "order": 29,
+    "osis": "Dan",
+    "type": "ot",
+    "usfm": "DAN"
+  },
+  {
+    "english": "Hosea",
+    "order": 30,
+    "osis": "Hos",
+    "type": "ot",
+    "usfm": "HOS"
+  },
+  {
+    "english": "Joel",
+    "order": 31,
+    "osis": "Joel",
+    "type": "ot",
+    "usfm": "JOL"
+  },
+  {
+    "english": "Amos",
+    "order": 32,
+    "osis": "Amos",
+    "type": "ot",
+    "usfm": "AMO"
+  },
+  {
+    "english": "Obadiah",
+    "order": 33,
+    "osis": "Obad",
+    "type": "ot",
+    "usfm": "OBA"
+  },
+  {
+    "english": "Jonah",
+    "order": 34,
+    "osis": "Jonah",
+    "type": "ot",
+    "usfm": "JON"
+  },
+  {
+    "english": "Micah",
+    "order": 35,
+    "osis": "Mic",
+    "type": "ot",
+    "usfm": "MIC"
+  },
+  {
+    "english": "Nahum",
+    "order": 36,
+    "osis": "Nah",
+    "type": "ot",
+    "usfm": "NAM"
+  },
+  {
+    "english": "Habakkuk",
+    "order": 37,
+    "osis": "Hab",
+    "type": "ot",
+    "usfm": "HAB"
+  },
+  {
+    "english": "Zephaniah",
+    "order": 38,
+    "osis": "Zeph",
+    "type": "ot",
+    "usfm": "ZEP"
+  },
+  {
+    "english": "Haggai",
+    "order": 39,
+    "osis": "Hag",
+    "type": "ot",
+    "usfm": "HAG"
+  },
+  {
+    "english": "Zechariah",
+    "order": 40,
+    "osis": "Zech",
+    "type": "ot",
+    "usfm": "ZEC"
+  },
+  {
+    "english": "Malachi",
+    "order": 41,
+    "osis": "Mal",
+    "type": "ot",
+    "usfm": "MAL"
+  },
+  {
+    "english": "Matthew",
+    "order": 42,
+    "osis": "Matt",
+    "type": "nt",
+    "usfm": "MAT"
+  },
+  {
+    "english": "Mark",
+    "order": 43,
+    "osis": "Mark",
+    "type": "nt",
+    "usfm": "MRK"
+  },
+  {
+    "english": "Luke",
+    "order": 44,
+    "osis": "Luke",
+    "type": "nt",
+    "usfm": "LUK"
+  },
+  {
+    "english": "John",
+    "order": 45,
+    "osis": "John",
+    "type": "nt",
+    "usfm": "JHN"
+  },
+  {
+    "english": "Acts",
+    "order": 46,
+    "osis": "Acts",
+    "type": "nt",
+    "usfm": "ACT"
+  },
+  {
+    "english": "Romans",
+    "order": 47,
+    "osis": "Rom",
+    "type": "nt",
+    "usfm": "ROM"
+  },
+  {
+    "english": "1 Corinthians",
+    "order": 48,
+    "osis": "1Cor",
+    "type": "nt",
+    "usfm": "1CO"
+  },
+  {
+    "english": "2 Corinthians",
+    "order": 49,
+    "osis": "2Cor",
+    "type": "nt",
+    "usfm": "2CO"
+  },
+  {
+    "english": "Galatians",
+    "order": 50,
+    "osis": "Gal",
+    "type": "nt",
+    "usfm": "GAL"
+  },
+  {
+    "english": "Ephesians",
+    "order": 51,
+    "osis": "Eph",
+    "type": "nt",
+    "usfm": "EPH"
+  },
+  {
+    "english": "Philippians",
+    "order": 52,
+    "osis": "Phil",
+    "type": "nt",
+    "usfm": "PHP"
+  },
+  {
+    "english": "Colossians",
+    "order": 53,
+    "osis": "Col",
+    "type": "nt",
+    "usfm": "COL"
+  },
+  {
+    "english": "1 Thessalonians",
+    "order": 54,
+    "osis": "1Thess",
+    "type": "nt",
+    "usfm": "1TH"
+  },
+  {
+    "english": "2 Thessalonians",
+    "order": 55,
+    "osis": "2Thess",
+    "type": "nt",
+    "usfm": "2TH"
+  },
+  {
+    "english": "1 Timothy",
+    "order": 56,
+    "osis": "1Tim",
+    "type": "nt",
+    "usfm": "1TI"
+  },
+  {
+    "english": "2 Timothy",
+    "order": 57,
+    "osis": "2Tim",
+    "type": "nt",
+    "usfm": "2TI"
+  },
+  {
+    "english": "Titus",
+    "order": 58,
+    "osis": "Titus",
+    "type": "nt",
+    "usfm": "TIT"
+  },
+  {
+    "english": "Philemon",
+    "order": 59,
+    "osis": "Phlm",
+    "type": "nt",
+    "usfm": "PHM"
+  },
+  {
+    "english": "Hebrews",
+    "order": 60,
+    "osis": "Heb",
+    "type": "nt",
+    "usfm": "HEB"
+  },
+  {
+    "english": "James",
+    "order": 61,
+    "osis": "Jas",
+    "type": "nt",
+    "usfm": "JAS"
+  },
+  {
+    "english": "1 Peter",
+    "order": 62,
+    "osis": "1Pet",
+    "type": "nt",
+    "usfm": "1PE"
+  },
+  {
+    "english": "2 Peter",
+    "order": 63,
+    "osis": "2Pet",
+    "type": "nt",
+    "usfm": "2PE"
+  },
+  {
+    "english": "1 John",
+    "order": 64,
+    "osis": "1John",
+    "type": "nt",
+    "usfm": "1JN"
+  },
+  {
+    "english": "2 John",
+    "order": 65,
+    "osis": "2John",
+    "type": "nt",
+    "usfm": "2JN"
+  },
+  {
+    "english": "3 John",
+    "order": 66,
+    "osis": "3John",
+    "type": "nt",
+    "usfm": "3JN"
+  },
+  {
+    "english": "Jude",
+    "order": 67,
+    "osis": "Jude",
+    "type": "nt",
+    "usfm": "JUD"
+  },
+  {
+    "english": "Revelation",
+    "order": 68,
+    "osis": "Rev",
+    "type": "nt",
+    "usfm": "REV"
+  },
+  {
+    "english": "Front Matter",
+    "order": 1,
+    "osis": "",
+    "type": "frontback",
+    "usfm": "FRT"
+  },
+  {
+    "english": "Back Matter",
+    "order": 69,
+    "osis": "",
+    "type": "frontback",
+    "usfm": "BAK"
+  },
+  {
+    "english": "Other Material",
+    "order": 70,
+    "osis": "",
+    "type": "other",
+    "usfm": "OTH"
+  },
+  {
+    "english": "Tobit",
+    "order": 71,
+    "osis": "Tob",
+    "type": "ap",
+    "usfm": "TOB"
+  },
+  {
+    "english": "Judith",
+    "order": 72,
+    "osis": "Jdt",
+    "type": "ap",
+    "usfm": "JDT"
+  },
+  {
+    "english": "Esther (Greek)",
+    "order": 73,
+    "osis": "AddEsth",
+    "type": "ap",
+    "usfm": "ESG"
+  },
+  {
+    "english": "Wisdom of Solomon",
+    "order": 74,
+    "osis": "Wis",
+    "type": "ap",
+    "usfm": "WIS"
+  },
+  {
+    "english": "Sirach",
+    "order": 75,
+    "osis": "Sir",
+    "type": "ap",
+    "usfm": "SIR"
+  },
+  {
+    "english": "Baruch",
+    "order": 76,
+    "osis": "Bar",
+    "type": "ap",
+    "usfm": "BAR"
+  },
+  {
+    "english": "Letter of Jeremiah",
+    "order": 77,
+    "osis": "EpJer",
+    "type": "ap",
+    "usfm": "LJE"
+  },
+  {
+    "english": "Song of the Three Children",
+    "order": 78,
+    "osis": "PrAzar",
+    "type": "ap",
+    "usfm": "S3Y"
+  },
+  {
+    "english": "Susanna",
+    "order": 79,
+    "osis": "Sus",
+    "type": "ap",
+    "usfm": "SUS"
+  },
+  {
+    "english": "Bel and the Dragon",
+    "order": 80,
+    "osis": "Bel",
+    "type": "ap",
+    "usfm": "BEL"
+  },
+  {
+    "english": "1 Maccabees",
+    "order": 81,
+    "osis": "1Macc",
+    "type": "ap",
+    "usfm": "1MA"
+  },
+  {
+    "english": "2 Maccabees",
+    "order": 82,
+    "osis": "2Macc",
+    "type": "ap",
+    "usfm": "2MA"
+  },
+  {
+    "english": "1 Esdras (Greek)",
+    "order": 83,
+    "osis": "1Esd",
+    "type": "ap",
+    "usfm": "1ES"
+  },
+  {
+    "english": "Prayer of Manasses",
+    "order": 84,
+    "osis": "PrMan",
+    "type": "ap",
+    "usfm": "MAN"
+  },
+  {
+    "english": "Psalm 151",
+    "order": 85,
+    "osis": "Ps151",
+    "type": "ap",
+    "usfm": "PS2"
+  },
+  {
+    "english": "3 Maccabees",
+    "order": 86,
+    "osis": "3Macc",
+    "type": "ap",
+    "usfm": "3MA"
+  },
+  {
+    "english": "2 Esdras (Latin)",
+    "order": 87,
+    "osis": "2Esd",
+    "type": "ap",
+    "usfm": "2ES"
+  },
+  {
+    "english": "4 Maccabees",
+    "order": 88,
+    "osis": "4Macc",
+    "type": "ap",
+    "usfm": "4MA"
+  },
+  {
+    "english": "Daniel (Greek)",
+    "order": 89,
+    "osis": "",
+    "type": "ap",
+    "usfm": "DAG"
+  },
+  {
+    "english": "Odes",
+    "order": 90,
+    "osis": "",
+    "type": "ap",
+    "usfm": "ODA"
+  },
+  {
+    "english": "Psalms of Solomon",
+    "order": 91,
+    "osis": "",
+    "type": "ap",
+    "usfm": "PSS"
+  },
+  {
+    "english": "Ezra Apocalypse",
+    "order": 92,
+    "osis": "",
+    "type": "ap",
+    "usfm": "EZA"
+  },
+  {
+    "english": "5 Ezra",
+    "order": 93,
+    "osis": "",
+    "type": "ap",
+    "usfm": "5EZ"
+  },
+  {
+    "english": "6 Ezra",
+    "order": 94,
+    "osis": "",
+    "type": "ap",
+    "usfm": "6EZ"
+  },
+  {
+    "english": "Psalms 152-155",
+    "order": 95,
+    "osis": "",
+    "type": "ap",
+    "usfm": "PS3"
+  },
+  {
+    "english": "2 Baruch (Apocalypse)",
+    "order": 96,
+    "osis": "",
+    "type": "ap",
+    "usfm": "2BA"
+  },
+  {
+    "english": "Letter of Baruch",
+    "order": 97,
+    "osis": "",
+    "type": "ap",
+    "usfm": "LBA"
+  },
+  {
+    "english": "Jubilees",
+    "order": 98,
+    "osis": "",
+    "type": "ap",
+    "usfm": "JUB"
+  },
+  {
+    "english": "Enoch",
+    "order": 99,
+    "osis": "",
+    "type": "ap",
+    "usfm": "ENO"
+  },
+  {
+    "english": "1 Meqabyan/Mekabis",
+    "order": 100,
+    "osis": "",
+    "type": "ap",
+    "usfm": "1MQ"
+  },
+  {
+    "english": "2 Meqabyan/Mekabis",
+    "order": 101,
+    "osis": "",
+    "type": "ap",
+    "usfm": "2MQ"
+  },
+  {
+    "english": "3 Meqabyan/Mekabis",
+    "order": 102,
+    "osis": "",
+    "type": "ap",
+    "usfm": "3MQ"
+  },
+  {
+    "english": "Reproof",
+    "order": 103,
+    "osis": "",
+    "type": "ap",
+    "usfm": "REP"
+  },
+  {
+    "english": "4 Baruch",
+    "order": 104,
+    "osis": "",
+    "type": "ap",
+    "usfm": "4BA"
+  },
+  {
+    "english": "Letter to the Laodiceans",
+    "order": 105,
+    "osis": "",
+    "type": "ap",
+    "usfm": "LAO"
+  },
+  {
+    "english": "Introduction Matter",
+    "order": 2,
+    "osis": "",
+    "type": "frontback",
+    "usfm": "INT"
+  },
+  {
+    "english": "Concordance",
+    "order": 106,
+    "osis": "",
+    "type": "frontback",
+    "usfm": "CNC"
+  },
+  {
+    "english": "Glossary / Wordlist",
+    "order": 107,
+    "osis": "",
+    "type": "frontback",
+    "usfm": "GLO"
+  },
+  {
+    "english": "Topical Index",
+    "order": 108,
+    "osis": "",
+    "type": "frontback",
+    "usfm": "TDX"
+  },
+  {
+    "english": "Names Index",
+    "order": 109,
+    "osis": "",
+    "type": "frontback",
+    "usfm": "NDX"
+  }
+]
