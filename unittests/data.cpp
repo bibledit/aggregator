@@ -105,11 +105,11 @@ TEST_F(db_test, add_or_replace)
 TEST_F(db_test, count)
 {
     data::Data data;
-    for (unsigned short book = 1; book <= 2; ++book)
+    for (short book = 1; book <= 2; ++book)
     {
-        for (unsigned short chapter = 1; chapter <= 2; ++chapter)
+        for (short chapter = 1; chapter <= 2; ++chapter)
         {
-            for (unsigned short verse = 1; verse <= 2; ++verse)
+            for (short verse = 1; verse <= 2; ++verse)
             {
                 const auto text = [&]
                 {

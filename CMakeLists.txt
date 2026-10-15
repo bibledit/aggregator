@@ -183,14 +183,16 @@ add_compile_definitions(
 find_package(CURL 8.0.0 REQUIRED)
 find_package(GTest 1.10.0 REQUIRED)
 find_package(nlohmann_json 3.10.0 REQUIRED)
+find_package(ICU REQUIRED COMPONENTS uc i18n)
 target_link_libraries(library PRIVATE
 	nlohmann_json::nlohmann_json # Header-only, needed at compile time, not link time.
+	ICU::uc
+	ICU::i18n
+	CURL::libcurl
 )
 target_link_libraries(aggregator PRIVATE
-	CURL::libcurl
 )
 target_link_libraries(unittest PRIVATE
-	CURL::libcurl
 	GTest::gtest
 )
 

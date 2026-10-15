@@ -19,12 +19,13 @@ Copyright (©) 2026-2026 Teus Benschop.
 #pragma once
 
 #include <filesystem>
+#include <iostream>
 #include <optional>
 #include <string_view>
 #include <vector>
+#include <chrono>
 
 namespace utilities {
-
 void file_put_contents(const std::filesystem::path& filename, std::string_view contents);
 std::string file_get_contents(const std::filesystem::path& filename);
 
@@ -44,7 +45,31 @@ template <typename... Parts>
 int shell_run (std::string command, std::string& out_err);
 void trim(std::string& s);
 [[nodiscard]] std::vector<std::string> explode_lines(std::string_view text, char delimiter);
-[[nodiscard]] unsigned int get_next_id(const std::optional<std::filesystem::path>& test_path = std::nullopt);
+[[nodiscard]] int get_next_id(const std::optional<std::filesystem::path>& test_path = std::nullopt);
+[[nodiscard]] int similarity_percentage(const std::string& a, const std::string& b);
+[[nodiscard]] std::string unicode_case_fold(const std::string&);
+[[nodiscard]] std::string replace(std::string_view s, std::string_view original, std::string_view replacement);
+[[nodiscard]] std::string replace_xml_elements(const std::string&);
+[[nodiscard]] std::string strip_xml_elements(std::string_view);
+void remove_double_spaces(std::string&);
 
+template <typename T>
+class scoped_timer
+{
+public:
+    explicit scoped_timer() noexcept
+    {
+        m_started_at = std::chrono::time_point_cast<T>(std::chrono::steady_clock::now());
+    }
+
+    ~scoped_timer() noexcept
+    {
+        const auto stopped_at = std::chrono::time_point_cast<T>(std::chrono::steady_clock::now());
+        std::cout << "elapsed " << (stopped_at - m_started_at) << std::endl;
+    }
+
+private:
+    std::chrono::time_point<std::chrono::steady_clock, T> m_started_at;
+};
 
 }

@@ -29,9 +29,9 @@ namespace data {
 
 struct VerseText
 {
-    unsigned short book{};
-    unsigned short chapter{};
-    unsigned short verse{};
+    int book{};
+    int chapter{};
+    int verse{};
     std::string text;
     std::string case_fold{};
     constexpr std::strong_ordering operator<=>(const VerseText&) const = default;

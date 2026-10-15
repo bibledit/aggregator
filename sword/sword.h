@@ -38,7 +38,7 @@ public:
     void fetch_modules();
     void leave_or_download_or_update_modules();
     [[nodiscard]] bool download_required(const std::string& remote_source, const sword::info& info) const;
-    void import_module(const sword::info& info); // Todo make private.
+    void import_module(const std::string& remote_source, const sword::info& info); // Todo make private.
 private:
     std::string out_err{};
     std::vector<std::string> m_remote_sources{}; // The remote sources.

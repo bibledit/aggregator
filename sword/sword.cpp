@@ -17,6 +17,7 @@
  */
 
 
+#include <algorithm>
 #include <filesystem>
 #include "sword.h"
 
@@ -117,10 +118,12 @@ void Sword::leave_or_download_or_update_modules() // Todo
     for (const auto& [remote_source, modules_info] : m_sources_modules) {
         for (const sword::info& module_info : modules_info)
         {
-            if (not download_required(remote_source, module_info))
+            if (not download_required(remote_source, module_info)) {
+                logger::plain("No download required for SWORD module", module_info.abbrev, "because it is up-to-date");
                 continue;
+            }
             install_module(remote_source, module_info);
-            import_module(module_info);
+            import_module(remote_source, module_info);
             uninstall_module(module_info);
         }
     }
@@ -136,7 +139,7 @@ bool Sword::download_required(const std::string& remote_source, const sword::inf
     // From here on the module is available in the Store.
     const store::Module module = m_store.get_module(store::Type::sword, remote_source, info.abbrev).value();
 
-    // If version number online differs from one in Store: Download required.
+    // If version number online differs from the one in Store: Download required.
     if (info.version != module.version)
         return true;
 
@@ -177,9 +180,15 @@ void Sword::install_module(const std::string& remote_source, const sword::info& 
 }
 
 
-void Sword::import_module(const sword::info& info) // Todo write it.
+constexpr auto corrupt_data_during_decompression {"corrupt data during decompression"};
+
+
+void Sword::import_module(const std::string& remote_source, const sword::info& info) // Todo write it.
 {
     logger::plain("Importing SWORD module", info.name, "version", info.version);
+
+    // The data for the entire module.
+    data::Data data{};
 
     // Run "diatheke" from the SWORD installation directory, else it fails.
     const std::string sword_path = get_sword_install_mgr_path();
@@ -188,11 +197,12 @@ void Sword::import_module(const sword::info& info) // Todo write it.
     // This gets the entire book of John: diatheke -b NETfree -o -n -k Jn
     // To include more notes, run this instead: $ diatheke -b KJV -o n -k Jn 3:16
 
-    constexpr std::array book_types {books::BookType::OldTestament, books::BookType::NewTestament};
-    for (const auto book_type : book_types)
+    for (const auto book_type : {books::BookType::OldTestament, books::BookType::NewTestament})
     {
         for (const auto& osis : books::get_all_osis(book_type))
         {
+            logger::plain("Extracting from", osis);
+            // Build and run the command to fetch text for the entire book.
             std::string parameters;
             parameters.append("-b " + info.abbrev + " -o ");
             parameters.append("n"); // Keep OSIS content.
@@ -202,11 +212,111 @@ void Sword::import_module(const sword::info& info) // Todo write it.
             parameters.append(osis);
             if (const int result = utilities::shell_run("cd " + sword_path + "; diatheke " + parameters, out_err); result != 0)
             {
-                logger::plain(out_err);
-                throw Base("Error fetching SWORD data from module", info.abbrev, "book", osis);
+                logger::plain("Error fetching SWORD data from module", info.abbrev, "book", osis, ":", out_err);
+                continue; // Try next book.
             }
+
+            // If the module has not been installed, the output of "diatheke" will be empty.
+            if (out_err.empty())
+            {
+                logger::plain("Skipping module", info.abbrev, "because it is not installed");
+                return; // Skip this module.
+            }
+
+            // If the module was encrypted, the output of "diatheke" displays a decompression error.
+            if (out_err.find(corrupt_data_during_decompression) != std::string::npos)
+            {
+                logger::plain("Skipping module", info.abbrev, "because it is encrypted");
+                return; // Skip this module.
+            }
+
+            // If the module was installed, but the requested book is out of range,
+            // the output of "diatheke" contains the module name.
+            if (out_err.size() < info.abbrev.size() + 10)
+            {
+                logger::plain("The book", osis, "is not available in module", info.abbrev);
+                continue; // Try next book.
+            }
+
+            // There's a large block of text for one book.
+            // This consists of multiple lines like this:
+            // Malachi 3:1: <verse osisID="Mal.3.1">Behold, I send forth My messenger, and he shall survey the way before Me: and the Lord, whom you seek, shall suddenly come into His temple, even the Messenger of the covenant, whom you take pleasure in: behold, He is coming, says the Lord Almighty.
+            // Split the text block into lines.
+            std::vector<std::string> lines = utilities::explode_lines(out_err, '\n');
+
+            // Find the shortest required book chapter:verse size.
+            const auto get_shortest_passage_signature = []
+            {
+                const auto osis_ot = get_all_osis(books::BookType::OldTestament);
+                const auto it1 = std::ranges::min_element(osis_ot, {}, &std::string::size);
+                const auto osis_nt = get_all_osis(books::BookType::NewTestament);
+                const auto it2 = std::ranges::min_element(osis_nt, {}, &std::string::size);
+                // Add chapter:verse like "Genesis 1:1: ".
+                // Shortest text is "Jesus wept" -> 10 characters.
+                return std::min(it1->size(), it2->size()) + 6 + 10;
+            };
+            const std::size_t shortest_passage_signature = get_shortest_passage_signature();
+
+            for (auto& line : lines)
+            {
+                // Clean it up.
+                utilities::trim(line);
+
+                // If the line is so short that no verse text could have been there, skip it.
+                if (line.size() <= shortest_passage_signature)
+                    continue;
+
+                // Fetch the passage, if not, record that and skip the line.
+                const std::optional<books::Passage> passage = books::get_passage(line);
+                if (not passage)
+                {
+                    logger::plain("No passage found in:", line);
+                    continue; // Skip this line.
+                }
+
+                // Get the length of the passage signature to skip to get the verse text. Todo fix this.
+                const size_t skip = passage->book_name.size() + 1 + std::to_string(passage->chapter).size() + 1 + std::to_string(passage->verse).size() + 1;
+                line.erase(0, skip);
+
+                // Process the XML and so on in the line, in the order below.
+                line = utilities::replace_xml_elements(line);
+                line = utilities::strip_xml_elements(line);
+                utilities::remove_double_spaces(line);
+                utilities::trim(line);
+                data.add_or_replace(
+                    data::VerseText{
+                        .book = passage->book_id,
+                        .chapter = passage->chapter,
+                        .verse = passage->verse,
+                        .text = line,
+                        .case_fold = utilities::unicode_case_fold(line),
+                    }
+                );
+            }
+            break; // return; // Todo
         }
     }
+
+    std::optional<store::Module> module = m_store.get_module(store::Type::sword, remote_source, info.abbrev);
+    int module_id{0};
+    if (module)
+        module_id = module->id;
+    else
+        module_id = utilities::get_next_id();
+    data.id(module_id);
+    data.save(std::nullopt); // Todo unify paths between this and the one in check download required.
+
+    store::Module new_module {
+        .id = module_id,
+        .type = store::Type::sword,
+        .source = remote_source,
+        .abbrev = info.abbrev,
+        .version = info.version,
+        .name = info.name,
+    };
+    m_store.add_or_update(new_module);
+
+    m_store.save_to_file();
 }
 
 
@@ -280,133 +390,4 @@ std::optional<info> parse (std::string_view line) noexcept
 }
 
 
-}
-
-
-//
-//   // If the module has not been installed, the output of "diatheke" will be empty.
-//   // If the module was installed, but the requested passage is out of range,
-//   // the output of "diatheke" contains the module name, so it won't be empty.
-//   module_available = !module_text.empty ();
-//
-//   if (!module_available) {
-//
-//     // Check whether the SWORD module exists.
-//     std::vector <std::string> modules {sword_logic_get_available ()};
-//     const std::string smodules = filter::string::implode (modules, std::string());
-//     if (smodules.find ("[" + module + "]") != std::string::npos) {
-//       // Schedule SWORD module installation.
-//       // (It used to be the case that this function, to get the text,
-//       // would wait till the SWORD module was installed, and then after installation,
-//       // return the text from that module.
-//       // But due to long waiting on Bibledit demo, while it would install multiple modules,
-//       // the Bibledit demo would become unresponsive.
-//       // So, it's better to return immediately with an informative text.)
-//       sword_logic_install_module_schedule (source, module);
-//       // Return standard 'installing' information. Client knows not to cache this.
-//       return sword_logic_installing_module_text ();
-//     } else {
-//       return "Cannot find SWORD module " + module;
-//     }
-//   }
-//
-//   // Clean it up.
-//   module_text = sword_logic_clean_verse (module, chapter, verse, module_text);
-//
-//   return module_text;
-//
-// #endif
-// }
-//
-//
-// std::map <int, std::string> sword_logic_get_bulk_text (const std::string& module, const int book, const int chapter, const std::vector <int>& verses)
-// {
-//   // Touch the cache so the server knows that the module has been accessed and won't uninstall it too soon.
-//   {
-//     const std::string path = sword_logic_access_tracker (module);
-//     filter_url_file_put_contents (path, "bulk");
-//   }
-//
-//   // The name of the book to pass to diatheke.
-//   const std::string osis = database::books::get_osis_from_id (static_cast<book_id>(book));
-//
-//   // Cannot run more than one "diatheke" per user, so use a mutex for that.
-//   sword_logic_diatheke_run_mutex.lock ();
-//
-//   // Here is how to speed up SWORD text retrieval.
-//   // The main point is to not pass just one verse,
-//   // but to pass the chapter number without the verse.
-//   // So it returns the entire chapter in one go.
-//   // One would even be able to pass the book only, so it returns the entire book.
-//   // But that would not add much to increasing the speed.
-//   // cd ~/.sword/InstallMgr
-//   // diatheke -b AB -k Ezra 5:1
-//   // diatheke -b AB -k Ezra 5
-//   // diatheke -b AB -k Ezra
-//   std::string error {};
-//   std::string bulk_text {};
-//   const int result = filter::shell::run (sword_logic_get_path (), std::string(filter::shell::get_executable(filter::shell::Executable::diatheke)), { "-b", module, "-k", osis, std::to_string (chapter) }, &bulk_text, &error);
-//   bulk_text.append (error);
-//   if (result != 0) logger::plain (error);
-//   // This is how the output would look.
-//   // Malachi 3:1: <verse osisID="Mal.3.1">Behold, I send forth My messenger, and he shall survey the way before Me: and the Lord, whom you seek, shall suddenly come into His temple, even the Messenger of the covenant, whom you take pleasure in: behold, He is coming, says the Lord Almighty.
-//
-//   sword_logic_diatheke_run_mutex.unlock ();
-//
-//   // Resulting verse text.
-//   std::map <int, std::string> output {};
-//
-//   // Iterate over all requested verses to extract the correct content from the chapter.
-//   // This works well in general.
-//   // It has been seen in a sample module, the "AB", that some verses in the SWORD module were empty.
-//   // In case of such verses, there's no content to extract from the chapter.
-//   // The cause in such verses is in the module builder.
-//   for (const auto verse : verses) {
-//     const std::string starter = " " + std::to_string(chapter) + ":" + std::to_string(verse) + ":";
-//     size_t pos1 = bulk_text.find (starter);
-//     if (pos1 == std::string::npos) {
-//       //logger::plain("Cannot find starter: |" + starter + "|");
-//       continue;
-//     }
-//     const std::string finisher = "\n";
-//     size_t pos2 = bulk_text.find (finisher, pos1);
-//     if (pos2 == std::string::npos) pos2 = bulk_text.length() + 1;
-//     pos1 += starter.length ();
-//     std::string text = bulk_text.substr (pos1, pos2 - pos1);
-//     text = sword_logic_clean_verse (module, chapter, verse, text);
-//     output [verse] = text;
-//   }
-//
-//   // Done.
-//   return output;
-// }
-//
-
-// std::string sword_logic_clean_verse (const std::string& module, int chapter, int verse, std::string text)
-// {
-//   // Remove any OSIS elements or make those elements displayable.
-//   if (database::config::general::get_keep_osis_content_in_sword_resources ()) {
-//     text = filter::string::escape_special_xml_characters (text);
-//   } else {
-//     filter::string::replace_between (text, "<", ">", "");
-//   }
-//
-//   // Remove the passage name that diatheke adds.
-//   // A reliable signature for this is the chapter and verse plus subsequent colon.
-//   const std::string chapter_verse = std::to_string (chapter) + ":" + std::to_string (verse);
-//   size_t pos = text.find (" " + chapter_verse + ":");
-//   if (pos != std::string::npos) {
-//     pos += 2;
-//     pos += chapter_verse.size ();
-//     text.erase (0, pos);
-//   }
-//
-//   // Remove the module name that diatheke adds.
-//   text = filter::string::replace ("(" + module + ")", "", text);
-//
-//   // Clean whitespace away.
-//   text = filter::string::trim (text);
-//
-//   // Done.
-//   return text;
-// }
+} // Namespace

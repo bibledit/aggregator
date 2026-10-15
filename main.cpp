@@ -36,18 +36,9 @@ int main(int argc, char* argv[])
         {
             Sword sword(store); // Todo enable.
             sword.initialize();
-            // sword.fetch_remote_sources();
-            // sword.fetch_modules();
-            // sword.leave_or_download_or_update_modules();
-
-            sword::info info {
-                .abbrev = "NETfree",
-                .version = "1.0",
-                .name = "NET Bible free"
-            };
-            sword.import_module(info);
-
-
+            sword.fetch_remote_sources();
+            sword.fetch_modules();
+            sword.leave_or_download_or_update_modules();
         }
 
         return EXIT_SUCCESS;

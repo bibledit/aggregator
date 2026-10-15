@@ -53,9 +53,9 @@ static json verse_to_json(const VerseText& vt)
 static VerseText verse_from_json(const json& j)
 {
     return VerseText {
-        .book      = j.at("book").get<unsigned short>(),
-        .chapter   = j.at("chapter").get<unsigned short>(),
-        .verse     = j.at("verse").get<unsigned short>(),
+        .book      = j.at("book").get<short>(),
+        .chapter   = j.at("chapter").get<short>(),
+        .verse     = j.at("verse").get<short>(),
         .text      = j.at("text").get<std::string>(),
         .case_fold = j.at("case_fold").get<std::string>(),
     };
@@ -66,7 +66,7 @@ void Data::load(const std::optional<std::filesystem::path>& path)
 {
     std::ifstream in(get_path(path), std::ios::binary);
     if (not in)
-        throw Base("Loading data: cannot open", get_path(path).string());
+        throw Base("Loading data: Cannot open", get_path(path).string());
 
     const json j = json::parse(in);   // throws json::parse_error on bad input
 
@@ -106,7 +106,7 @@ void Data::save(std::optional<std::filesystem::path> path) const
         std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
         if (not out)
             throw Base("Saving data: Cannot open", tmp.string());
-        out << j.dump();
+        out << j.dump(2);
         out.flush();
         if (not out)
             throw Base("Saving data: Write failed for", tmp.string());
@@ -206,7 +206,7 @@ std::string_view Data::get_case_fold(const unsigned short book, const unsigned s
 
 [[nodiscard]] std::filesystem::path Data::storage_path() const
 {
-    return std::filesystem::path(SOURCE_DIR) / "data" / std::string(std::to_string(m_id) + ".module");
+    return std::filesystem::path(SOURCE_DIR) / "data" / std::string(std::to_string(m_id) + ".json");
 }
 
 
