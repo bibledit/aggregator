@@ -1,4 +1,3 @@
 build/
 build-*/
-data/modules.json
-/data
+data/*.json
