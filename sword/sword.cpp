@@ -289,13 +289,15 @@ void Sword::import_module(const std::string& remote_source, const sword::info& i
                         .chapter = passage->chapter,
                         .verse = passage->verse,
                         .text = line,
-                        .case_fold = utilities::unicode_case_fold(line),
                     }
                 );
             }
             break; // return; // Todo
         }
     }
+
+    // If a module was downloaded or re-downloaded, it always gets a new UUID.
+    const std::string uuid = utilities::get_uuid();
 
     std::optional<store::Module> module = m_store.get_module(store::Type::sword, remote_source, info.abbrev);
     int module_id{0};
@@ -304,6 +306,7 @@ void Sword::import_module(const std::string& remote_source, const sword::info& i
     else
         module_id = utilities::get_next_id();
     data.id(module_id);
+    data.uuid(uuid);
     data.save(std::nullopt); // Todo unify paths between this and the one in check download required.
 
     store::Module new_module {
@@ -313,6 +316,7 @@ void Sword::import_module(const std::string& remote_source, const sword::info& i
         .abbrev = info.abbrev,
         .version = info.version,
         .name = info.name,
+        .uuid = uuid,
     };
     m_store.add_or_update(new_module);
 

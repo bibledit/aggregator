@@ -52,6 +52,8 @@ void trim(std::string& s);
 [[nodiscard]] std::string replace_xml_elements(const std::string&);
 [[nodiscard]] std::string strip_xml_elements(std::string_view);
 void remove_double_spaces(std::string&);
+[[nodiscard]] int seconds_since_unix_epoch();
+[[nodiscard]] std::string get_uuid() noexcept;
 
 template <typename T>
 class scoped_timer

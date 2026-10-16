@@ -184,11 +184,14 @@ find_package(CURL 8.0.0 REQUIRED)
 find_package(GTest 1.10.0 REQUIRED)
 find_package(nlohmann_json 3.10.0 REQUIRED)
 find_package(ICU REQUIRED COMPONENTS uc i18n)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(UUID REQUIRED IMPORTED_TARGET uuid)
 target_link_libraries(library PRIVATE
 	nlohmann_json::nlohmann_json # Header-only, needed at compile time, not link time.
 	ICU::uc
 	ICU::i18n
 	CURL::libcurl
+	PkgConfig::UUID
 )
 target_link_libraries(aggregator PRIVATE
 )

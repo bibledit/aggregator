@@ -39,6 +39,7 @@ struct Module
     std::string abbrev{}; // Module identifier, e.g. "GNB2026".
     std::string version{}; // Module version, e.g. "1.2".
     std::string name{}; // Module name, e.g. "Great News Bible".
+    std::string uuid{}; // Generated on each module update, instead of timestamp which leaks the update time.
     constexpr std::strong_ordering operator<=>(const Module&) const = default;
 };
 

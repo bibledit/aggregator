@@ -33,14 +33,13 @@ struct VerseText
     int chapter{};
     int verse{};
     std::string text;
-    std::string case_fold{};
     constexpr std::strong_ordering operator<=>(const VerseText&) const = default;
 };
 
 class Data
 {
     int m_id {};
-    std::uint64_t m_timestamp {};
+    std::string m_uuid {};
     std::vector<VerseText> m_data{};
 public:
     Data();
@@ -49,16 +48,14 @@ public:
     void save(std::optional<std::filesystem::path> path) const;
     [[nodiscard]] decltype(m_id) id() const { return m_id; }
     void id (const decltype(m_id) v) { m_id = v; }
-    [[nodiscard]] decltype(m_timestamp) timestamp() const { return m_timestamp; }
-    void timestamp (const decltype(m_timestamp) v) { m_timestamp = v; }
+    [[nodiscard]] decltype(m_uuid) uuid() const { return m_uuid; }
+    void uuid (const decltype(m_uuid) v) { m_uuid = v; }
     void add_or_replace(VerseText);
     [[nodiscard]] std::size_t verse_count() const noexcept;
     [[nodiscard]] std::size_t verse_count(unsigned short book) const noexcept;
     [[nodiscard]] std::size_t verse_count(unsigned short book, unsigned short chapter) const noexcept;
     [[nodiscard]] std::size_t verse_count(unsigned short book, unsigned short chapter, unsigned short verse) const noexcept;
     [[nodiscard]] std::string_view get_text(unsigned short book, unsigned short chapter, unsigned short verse) const noexcept;
-    [[nodiscard]] std::string_view get_case_fold(unsigned short book, unsigned short chapter,
-                                                 unsigned short verse) const noexcept;
     [[nodiscard]] std::filesystem::path storage_path() const;
     constexpr std::strong_ordering operator<=>(const Data&) const = default;
 private:

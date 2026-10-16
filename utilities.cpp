@@ -29,6 +29,8 @@ Copyright (©) 2026-2026 Teus Benschop.
 #include <unicode/utypes.h>
 #include <unicode/unistr.h>
 #include <unicode/translit.h>
+#include <uuid/uuid.h>
+
 
 
 namespace utilities {
@@ -245,6 +247,28 @@ void remove_double_spaces(std::string& str)
     // This is O(n) and so fast.
     constexpr auto predicate = [](const char a, const char b) { return a == ' ' and b == ' '; };
     str.erase(std::ranges::unique(str, predicate).begin(), str.end());
+}
+
+
+// Returns the seconds since the Unix epoch, which is 1 January 1970 UTC.
+int seconds_since_unix_epoch()
+{
+    const auto now = std::chrono::system_clock::now();
+    const auto duration = now.time_since_epoch();
+    return static_cast<decltype(seconds_since_unix_epoch())>(std::chrono::duration_cast<std::chrono::seconds>(duration).count());
+}
+
+
+// Only version 4 of Leach-Salz UUID is used for the UUID in the RSMP specs.
+// https://datatracker.ietf.org/doc/html/rfc4122.
+// The library "libuuid" has mechanisms to adhere to the above RFC.
+[[nodiscard]] std::string get_uuid() noexcept
+{
+    uuid_t uuid;
+    uuid_generate(uuid);
+    char uuid_str[UUID_STR_LEN]; // eg. "1b4e28ba-2fa1-11d2-883f-0016d3cca427" + "\0"
+    uuid_unparse_lower(uuid, uuid_str);
+    return uuid_str;
 }
 
 

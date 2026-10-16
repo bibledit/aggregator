@@ -48,7 +48,7 @@ Store::~Store()
 }
 
 // Generates to_json() and from_json() for struct Module.
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Module, id, type, source, abbrev, version, name)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Module, id, type, source, abbrev, version, name, uuid)
 
 void Store::load_from_file()
 {

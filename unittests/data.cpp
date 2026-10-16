@@ -51,14 +51,13 @@ TEST_F(db_test, save_load)
     data::Data live_data;
     constexpr auto id {123};
     live_data.id(id);
-    constexpr auto timestamp {12345789};
-    live_data.timestamp(timestamp);
+    const auto uuid {utilities::get_uuid()};
+    live_data.uuid(uuid);
     const data::VerseText vt1 {
         .book = 456,
         .chapter = 567,
         .verse = 678,
         .text = "text1",
-        .case_fold = "case fold 1",
     };
     live_data.add_or_replace(vt1);
     const data::VerseText vt2 {
@@ -66,7 +65,6 @@ TEST_F(db_test, save_load)
         .chapter = 5678,
         .verse = 6789,
         .text = "text2",
-        .case_fold = "case fold 2",
     };
     live_data.add_or_replace(vt2);
     live_data.save(db_path);
@@ -76,7 +74,7 @@ TEST_F(db_test, save_load)
 
     EXPECT_EQ(loaded_data, live_data);
     EXPECT_EQ(loaded_data.id(), live_data.id());
-    EXPECT_EQ(loaded_data.timestamp(), live_data.timestamp());
+    EXPECT_EQ(loaded_data.uuid(), live_data.uuid());
 }
 
 
@@ -89,7 +87,6 @@ TEST_F(db_test, add_or_replace)
         .chapter = 2,
         .verse = 3,
         .text = "t",
-        .case_fold = "cf",
     };
     data.add_or_replace(vt);
     data.add_or_replace(vt);
@@ -120,7 +117,6 @@ TEST_F(db_test, count)
                     .chapter = chapter,
                     .verse = verse,
                     .text = text(),
-                    .case_fold = text(),
                 };
                 data.add_or_replace(std::move(vt));
             }
@@ -140,14 +136,12 @@ TEST_F(db_test, get)
     constexpr auto chapter = 2;
     constexpr auto verse = 3;
     constexpr auto text = "text";
-    constexpr auto case_fold = "cf";
 
     data::VerseText vt {
         .book = book,
         .chapter = chapter,
         .verse = verse,
         .text = text,
-        .case_fold = case_fold,
     };
     data.add_or_replace(vt);
 
@@ -156,15 +150,11 @@ TEST_F(db_test, get)
     ++vt2.chapter;
     ++vt2.verse;
     vt2.text.append(text);
-    vt2.case_fold.append(case_fold);
     data.add_or_replace(vt2);
 
     EXPECT_EQ(data.get_text(book, chapter, verse), text);
-    EXPECT_EQ(data.get_case_fold(book, chapter, verse), case_fold);
 
     EXPECT_EQ(data.get_text(book + 1, chapter + 1, verse + 1), std::string(text).append(text));
-    EXPECT_EQ(data.get_case_fold(book + 1, chapter + 1, verse + 1), std::string(case_fold).append(case_fold));
 
     EXPECT_EQ(data.get_text(3, 2, 1), "");
-    EXPECT_EQ(data.get_case_fold(3, 2, 1), "");
 }

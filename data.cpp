@@ -45,7 +45,6 @@ static json verse_to_json(const VerseText& vt)
         { "chapter",   vt.chapter },
         { "verse",     vt.verse },
         { "text",      vt.text },
-        { "case_fold", vt.case_fold },
     };
 }
 
@@ -57,7 +56,6 @@ static VerseText verse_from_json(const json& j)
         .chapter   = j.at("chapter").get<short>(),
         .verse     = j.at("verse").get<short>(),
         .text      = j.at("text").get<std::string>(),
-        .case_fold = j.at("case_fold").get<std::string>(),
     };
 }
 
@@ -71,8 +69,8 @@ void Data::load(const std::optional<std::filesystem::path>& path)
     const json j = json::parse(in);   // throws json::parse_error on bad input
 
     // Parse into locals first: Malformed file leaves the object unchanged.
-    const auto id        = j.at("id").get<int>();
-    const auto timestamp = j.at("timestamp").get<std::uint64_t>();
+    const auto id   = j.at("id").get<int>();
+    const auto uuid = j.at("uuid").get<std::string>();
 
     std::vector<VerseText> verses;
     const auto& arr = j.at("data");
@@ -82,7 +80,7 @@ void Data::load(const std::optional<std::filesystem::path>& path)
 
     // Commit.
     m_id = id;
-    m_timestamp = timestamp;
+    m_uuid = uuid;
     m_data = std::move(verses);
 }
 
@@ -94,9 +92,9 @@ void Data::save(std::optional<std::filesystem::path> path) const
         verses.push_back(verse_to_json(v));
 
     const json j {
-        { "id",        m_id },
-        { "timestamp", m_timestamp },
-        { "data",      std::move(verses) },
+        { "id",   m_id },
+        { "uuid", m_uuid },
+        { "data", std::move(verses) },
     };
 
     // Write to a temporary file first.
@@ -193,14 +191,6 @@ std::string_view Data::get_text(const unsigned short book, const unsigned short 
 {
     const auto* v = find(book, chapter, verse);
     return v ? std::string_view{v->text} : std::string_view{};
-}
-
-
-std::string_view Data::get_case_fold(const unsigned short book, const unsigned short chapter,
-                                     const unsigned short verse) const noexcept
-{
-    const auto* v = find(book, chapter, verse);
-    return v ? std::string_view{v->case_fold} : std::string_view{};
 }
 
 
