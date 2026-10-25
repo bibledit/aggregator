@@ -98,9 +98,8 @@ TEST_F(sword_lib, download_required)
 
     store::Store store(store_path); // empty.
 
-    class TestSword : public Sword
+    struct TestSword : Sword
     {
-    public:
         // Inherit the user-defined constructors.
         using Sword::Sword;
         // Make Sword's protected member accessible for testing.
