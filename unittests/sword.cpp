@@ -94,11 +94,22 @@ TEST_F(sword_lib, parse_module)
 
 TEST_F(sword_lib, download_required)
 {
+    constexpr auto remote_source = "source";
+
     store::Store store(store_path); // empty.
 
-    Sword sword (store);
+    class TestSword : public Sword
+    {
+    public:
+        // Inherit the user-defined constructors.
+        using Sword::Sword;
+        // Make Sword's protected member accessible for testing.
+        using Sword::download_required;
+    };
 
-    constexpr auto get_remote_source = [] { return "source"; };
+    TestSword sword (store);
+    sword.remote_source(remote_source);
+
     constexpr auto get_info = []
     {
         return sword::info {
@@ -112,7 +123,7 @@ TEST_F(sword_lib, download_required)
         return store::Module {
             .id = 1,
             .type = store::Type::sword,
-            .source = get_remote_source(),
+            .source = remote_source,
             .abbrev = get_info().abbrev,
             .version = get_info().version,
             .name = get_info().name,
@@ -120,14 +131,14 @@ TEST_F(sword_lib, download_required)
     };
 
     // Module not in store: Download req.
-    // Todo EXPECT_TRUE(sword.download_required(get_remote_source(), get_info()));
+    EXPECT_TRUE(sword.download_required(get_info()));
 
     // Put the module in the Store. Different version number -> Download req.
     {
         auto module = get_module();
         module.version = "different";
         store.add_or_update(module);
-        // Todo EXPECT_TRUE(sword.download_required(get_remote_source(), get_info()));
+        EXPECT_TRUE(sword.download_required(get_info()));
     }
     store.add_or_update(get_module()); // restore.
 

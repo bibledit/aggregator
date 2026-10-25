@@ -48,13 +48,14 @@ public:
     void fetch_modules();
     void leave_or_download_or_update_modules();
     void remote_source(std::string_view);
+protected:
+    [[nodiscard]] bool download_required(const sword::info& info) const;
 private:
     std::string out_err{};
     std::string m_remote_source{}; // The remote source.
     std::vector<sword::info> m_modules{}; // The remote modules.
     store::Store& m_store; // The general store.
     void install_module(const sword::info& info);
-    [[nodiscard]] bool download_required(const sword::info& info) const;
     void import_module(const sword::info& info);
     void uninstall_module(const sword::info& info);
 };
