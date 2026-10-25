@@ -20,12 +20,9 @@
 #include <algorithm>
 #include <filesystem>
 #include "sword.h"
-
 #include <iostream>
 #include <ranges>
 #include <string>
-#include <__thread/this_thread.h>
-
 #include "data.h"
 #include "exception.h"
 #include "logger.h"
@@ -69,13 +66,14 @@ void Sword::initialize()
 }
 
 
+// Fetches and lists the remote sources.
 void Sword::fetch_remote_sources()
 {
     logger::plain("Fetching list of remote SWORD sources");
-    m_remote_sources.clear();
     utilities::shell_run("installmgr -s", out_err);
     utilities::trim(out_err);
     logger::plain(out_err);
+    logger::plain("The following remote sources are available");
     for (auto line : utilities::explode_lines(out_err, '\n'))
     {
         utilities::trim(line);
@@ -83,61 +81,69 @@ void Sword::fetch_remote_sources()
             continue;
         line.erase(0, 1);
         line.pop_back();
-        m_remote_sources.emplace_back(line);
-        logger::plain(line);
-        return; // Todo remove later.
+        std::ostringstream ss{};
+        ss << std::quoted(line);
+        logger::plain(std::move(ss).str());
     }
+}
+
+
+void Sword::remote_source(const std::string_view remote_source)
+{
+    m_remote_source = remote_source;
 }
 
 
 void Sword::fetch_modules()
 {
     logger::plain("Fetching SWORD modules");
-    for (const auto& remote_source : m_remote_sources)
     {
-        utilities::shell_run("installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -r \"" + remote_source + "\"", out_err);
-        utilities::trim(out_err);
-        logger::plain(out_err);
-        utilities::shell_run("installmgr -rl \"" + remote_source + "\"", out_err);
-        for (const auto& line : utilities::explode_lines(out_err, '\n'))
-        {
-            if (const std::optional<sword::info> info = sword::parse (line))
-            {
-                m_sources_modules[remote_source].push_back(*info);
-                logger::plain(line);
-            }
-        }
-        logger::plain(remote_source, ":", m_sources_modules[remote_source].size(), "modules");
+        std::ostringstream command {};
+        command << "installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -r " << std::quoted(m_remote_source);
+        utilities::shell_run(std::move(command).str(), out_err);
     }
+    utilities::trim(out_err);
+    logger::plain(out_err);
+    {
+        std::ostringstream command {};
+        command << "installmgr -rl " << std::quoted(m_remote_source);
+        utilities::shell_run(std::move(command).str(), out_err);
+    }
+    for (const auto& line : utilities::explode_lines(out_err, '\n'))
+    {
+        if (const std::optional<sword::info> info = sword::parse(line))
+        {
+            m_modules.push_back(*info);
+            logger::plain(line);
+        }
+    }
+    logger::plain(m_remote_source, ":", m_modules.size(), "modules");
 }
 
 
-void Sword::leave_or_download_or_update_modules() // Todo
+void Sword::leave_or_download_or_update_modules()
 {
-    // Iterate over the remote sources and the module information.
-    for (const auto& [remote_source, modules_info] : m_sources_modules) {
-        for (const sword::info& module_info : modules_info)
-        {
-            if (not download_required(remote_source, module_info)) {
-                logger::plain("No download required for SWORD module", module_info.abbrev, "because it is up-to-date");
-                continue;
-            }
-            install_module(remote_source, module_info);
-            import_module(remote_source, module_info);
-            uninstall_module(module_info);
+    // Iterate over the module information.
+    for (const sword::info& module_info : m_modules) {
+        if (not download_required(module_info)) {
+            logger::plain("No download required for SWORD module", module_info.abbrev, "because it is up-to-date");
+            continue;
         }
+        install_module(module_info);
+        import_module(module_info);
+        uninstall_module(module_info);
     }
 }
 
 
-bool Sword::download_required(const std::string& remote_source, const sword::info& info) const
+bool Sword::download_required(const sword::info& info) const
 {
     // If the module is not in the Store: Download required.
-    if (not m_store.get_module(store::Type::sword, remote_source, info.abbrev))
+    if (not m_store.get_module(store::Type::sword, m_remote_source, info.abbrev))
         return true;
 
     // From here on the module is available in the Store.
-    const store::Module module = m_store.get_module(store::Type::sword, remote_source, info.abbrev).value();
+    const store::Module module = m_store.get_module(store::Type::sword, m_remote_source, info.abbrev).value();
 
     // If version number online differs from the one in Store: Download required.
     if (info.version != module.version)
@@ -166,15 +172,17 @@ bool Sword::download_required(const std::string& remote_source, const sword::inf
 }
 
 
-void Sword::install_module(const std::string& remote_source, const sword::info& info)
+void Sword::install_module(const sword::info& info)
 {
-    logger::plain ("Install SWORD module", info.abbrev, "from source", remote_source);
+    logger::plain ("Install SWORD module", info.abbrev, "from source", m_remote_source);
 
     // Installation through SWORD InstallMgr binary "installmgr" works
     // when running it from the ~/.sword/InstallMgr directory.
-    const std::string command = "cd " + get_sword_install_mgr_path() + "; installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -ri \"" + remote_source + "\" \"" + info.abbrev + "\"";
-    logger::plain(command);
-    utilities::shell_run(command, out_err);
+    std::ostringstream command;
+    command << "cd " << get_sword_install_mgr_path() << "; ";
+    command << "installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -ri " << std::quoted(m_remote_source) << " " << std::quoted(info.abbrev);
+    logger::plain(command.str());
+    utilities::shell_run(command.str(), out_err);
     utilities::trim(out_err);
     logger::plain(out_err);
 }
@@ -183,7 +191,7 @@ void Sword::install_module(const std::string& remote_source, const sword::info& 
 constexpr auto corrupt_data_during_decompression {"corrupt data during decompression"};
 
 
-void Sword::import_module(const std::string& remote_source, const sword::info& info) // Todo write it.
+void Sword::import_module(const sword::info& info)
 {
     logger::plain("Importing SWORD module", info.name, "version", info.version);
 
@@ -274,7 +282,7 @@ void Sword::import_module(const std::string& remote_source, const sword::info& i
                     continue; // Skip this line.
                 }
 
-                // Get the length of the passage signature to skip to get the verse text. Todo fix this.
+                // Get the length of the passage signature to skip to get the verse text.
                 const size_t skip = passage->book_name.size() + 1 + std::to_string(passage->chapter).size() + 1 + std::to_string(passage->verse).size() + 1;
                 line.erase(0, skip);
 
@@ -292,14 +300,14 @@ void Sword::import_module(const std::string& remote_source, const sword::info& i
                     }
                 );
             }
-            break; // return; // Todo
+            //break; // return; // Todo
         }
     }
 
     // If a module was downloaded or re-downloaded, it always gets a new UUID.
     const std::string uuid = utilities::get_uuid();
 
-    std::optional<store::Module> module = m_store.get_module(store::Type::sword, remote_source, info.abbrev);
+    std::optional<store::Module> module = m_store.get_module(store::Type::sword, m_remote_source, info.abbrev);
     int module_id{0};
     if (module)
         module_id = module->id;
@@ -312,7 +320,7 @@ void Sword::import_module(const std::string& remote_source, const sword::info& i
     store::Module new_module {
         .id = module_id,
         .type = store::Type::sword,
-        .source = remote_source,
+        .source = m_remote_source,
         .abbrev = info.abbrev,
         .version = info.version,
         .name = info.name,

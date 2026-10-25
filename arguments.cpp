@@ -51,7 +51,7 @@ Arguments::Arguments(const int argc, char* argv[])
             .has_arg = required_argument,
             .val = o_sword,
             .arg_name = "module",
-            .description = "Sword to use"
+            .description = "Sword remote source to use - use list to see them all"
         },
         OptionSpec{
             .name = "help",

@@ -19,13 +19,23 @@
 
 #pragma once
 
-#include <map>
 #include <vector>
 #include "store.h"
 #include "sword.h"
 
 namespace sword {
-struct info;
+
+constexpr auto list {"list"};
+
+struct info
+{
+    std::string abbrev{};
+    std::string version{};
+    std::string name{};
+};
+
+std::optional<info> parse (std::string_view line) noexcept;
+
 }
 
 class Sword
@@ -37,27 +47,14 @@ public:
     void fetch_remote_sources();
     void fetch_modules();
     void leave_or_download_or_update_modules();
-    [[nodiscard]] bool download_required(const std::string& remote_source, const sword::info& info) const;
-    void import_module(const std::string& remote_source, const sword::info& info); // Todo make private.
+    void remote_source(std::string_view);
 private:
     std::string out_err{};
-    std::vector<std::string> m_remote_sources{}; // The remote sources.
-    std::map<std::string, std::vector<sword::info>> m_sources_modules{}; // The remote modules.
+    std::string m_remote_source{}; // The remote source.
+    std::vector<sword::info> m_modules{}; // The remote modules.
     store::Store& m_store; // The general store.
-    void install_module(const std::string& remote_source, const sword::info& info);
+    void install_module(const sword::info& info);
+    [[nodiscard]] bool download_required(const sword::info& info) const;
+    void import_module(const sword::info& info);
     void uninstall_module(const sword::info& info);
 };
-
-namespace sword {
-
-struct info
-{
-    std::string abbrev{};
-    std::string version{};
-    std::string name{};
-};
-
-
-std::optional<info> parse (std::string_view line) noexcept;
-
-}

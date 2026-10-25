@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #include "books/books.h"
 #include "sword/sword.h"
 
-int main(int argc, char* argv[])
+int main(const int argc, char* argv[])
 {
     try
     {
@@ -34,18 +34,28 @@ int main(int argc, char* argv[])
         const Arguments arguments(argc, argv);
         if (not arguments.sword().empty())
         {
-            Sword sword(store); // Todo enable.
+            const auto& command = arguments.sword();
+            Sword sword(store);
             sword.initialize();
-            sword.fetch_remote_sources();
-            sword.fetch_modules();
-            sword.leave_or_download_or_update_modules();
+            if (command == sword::list)
+            {
+                // Fetch and list the available remote sources.
+                sword.fetch_remote_sources();
+            }
+            else
+            {
+                // In this case the command parameter is the remote resource, e.g. "Crosswire".
+                sword.remote_source(command);
+                sword.fetch_modules();
+                sword.leave_or_download_or_update_modules();
+            }
         }
 
         return EXIT_SUCCESS;
     }
     catch (const std::exception& exception)
     {
-        std::cerr << exception.what() << std::endl;
+        logger::plain(exception.what());
     }
     return EXIT_FAILURE;
 }
