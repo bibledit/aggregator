@@ -2,7 +2,9 @@
   <dictionary name="project">
     <words>
       <w>OSIS</w>
+      <w>bibledit</w>
       <w>osis</w>
+      <w>pipefail</w>
     </words>
   </dictionary>
 </component>

@@ -175,16 +175,13 @@ bool Sword::download_required(const sword::info& info) const
 void Sword::install_module(const sword::info& info)
 {
     logger::plain ("Install SWORD module", info.abbrev, "from source", m_remote_source);
-
     // Installation through SWORD InstallMgr binary "installmgr" works
     // when running it from the ~/.sword/InstallMgr directory.
     std::ostringstream command;
     command << "cd " << get_sword_install_mgr_path() << "; ";
     command << "installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -ri " << std::quoted(m_remote_source) << " " << std::quoted(info.abbrev);
     logger::plain(command.str());
-    utilities::shell_run(command.str(), out_err);
-    utilities::trim(out_err);
-    logger::plain(out_err);
+    system(command.str().c_str());
 }
 
 

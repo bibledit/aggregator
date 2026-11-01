@@ -186,12 +186,16 @@ find_package(nlohmann_json 3.10.0 REQUIRED)
 find_package(ICU REQUIRED COMPONENTS uc i18n)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(UUID REQUIRED IMPORTED_TARGET uuid)
+# The SWORD library to be installed on macOS manually: Add the search path
+set(ENV{PKG_CONFIG_PATH} "/usr/local/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+pkg_check_modules(SWORD REQUIRED IMPORTED_TARGET sword)
 target_link_libraries(library PRIVATE
 	nlohmann_json::nlohmann_json # Header-only, needed at compile time, not link time.
 	ICU::uc
 	ICU::i18n
 	CURL::libcurl
 	PkgConfig::UUID
+	PkgConfig::SWORD
 )
 target_link_libraries(aggregator PRIVATE
 )
