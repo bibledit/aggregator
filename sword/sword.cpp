@@ -342,19 +342,20 @@ void Sword::import_module(const sword::info& info)
                     }
                 );
             }
-            //break; // return; // Todo
         }
     }
 
     // If a module was downloaded or re-downloaded, it always gets a new UUID.
     const std::string uuid = utilities::get_uuid();
 
-    std::optional<store::Module> module = m_store.get_module(store::Type::sword, m_remote_source, info.abbrev);
-    int module_id{0};
-    if (module)
-        module_id = module->id;
-    else
-        module_id = utilities::get_next_id();
+    const auto get_module_id = [&]
+    {
+        const std::optional<store::Module> module = m_store.get_module(store::Type::sword, m_remote_source, info.abbrev);
+        if (module)
+            return module->id;
+        return utilities::get_next_id();
+    };
+    const int module_id {get_module_id()};
     data.id(module_id);
     data.uuid(uuid);
     data.save(std::nullopt); // Todo unify paths between this and the one in check download required.
@@ -382,30 +383,3 @@ void Sword::uninstall_module(const sword::info& info)
     utilities::trim(out_err);
     logger::plain (out_err);
 }
-
-
-namespace sword {
-
-constexpr std::string_view whitespace{" \t\r\n"};
-
-static constexpr void skip_whitespace(std::string_view& s) noexcept
-{
-    s.remove_prefix(std::min(s.find_first_not_of(whitespace), s.size()));
-}
-
-// Consumes "<open>text<close>" from the front of line and returns text.
-static constexpr std::optional<std::string_view>
-take_delimited(std::string_view& line, const char open, const char close) noexcept
-{
-    if (line.empty() or line.front() != open)
-        return std::nullopt;
-    const auto end = line.find(close, 1);
-    if (end == std::string_view::npos)
-        return std::nullopt;
-    const auto inner = line.substr(1, end - 1);
-    line.remove_prefix(end + 1);
-    return inner;
-}
-
-
-} // Namespace
