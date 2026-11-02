@@ -34,8 +34,6 @@ struct info
     std::string name{};
 };
 
-std::optional<info> parse (std::string_view line) noexcept;
-
 }
 
 class Sword

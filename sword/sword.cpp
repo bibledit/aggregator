@@ -408,40 +408,4 @@ take_delimited(std::string_view& line, const char open, const char close) noexce
 }
 
 
-std::optional<info> parse (std::string_view line) noexcept
-{
-    skip_whitespace(line);
-
-    if (not line.empty() and line.front() == '*') // the leading '*' is optional
-        line.remove_prefix(1);
-
-    skip_whitespace(line);
-
-    const auto id = take_delimited(line, '[', ']');
-    if (not id)
-        return std::nullopt;
-
-    skip_whitespace(line);
-
-    const auto version = take_delimited(line, '(', ')');
-    if (not version)
-        return std::nullopt;
-
-    skip_whitespace(line);
-
-    if (line.empty() or line.front() != '-')
-        return std::nullopt;
-    line.remove_prefix(1);
-
-    skip_whitespace(line);
-
-    const auto last = line.find_last_not_of(whitespace); // trim the right end
-    if (last == std::string_view::npos)
-        return std::nullopt; // no name after the dash
-    line = line.substr(0, last + 1);
-
-    return info {.abbrev = std::string(*id), .version = std::string(*version), .name = std::string(line)};
-}
-
-
 } // Namespace

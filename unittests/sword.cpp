@@ -43,54 +43,6 @@ protected:
 };
 }
 
-TEST_F(sword_lib, parse_module)
-{
-    {
-        constexpr std::string_view line {"*[ymp2025eb]  	(2.7)  	- Yamap"};
-        EXPECT_EQ(sword::parse(line)->abbrev, "ymp2025eb");
-        EXPECT_EQ(sword::parse(line)->version, "2.7");
-        EXPECT_EQ(sword::parse(line)->name, "Yamap");
-    }
-
-    {
-        constexpr std::string_view line {"*[peg2020eb]  	(4.7)  	- ସତ୍‌ ବଚନ୍"};
-        EXPECT_EQ(sword::parse(line)->abbrev, "peg2020eb");
-        EXPECT_EQ(sword::parse(line)->version, "4.7");
-        EXPECT_EQ(sword::parse(line)->name, "ସତ୍‌ ବଚନ୍");
-    }
-
-    {
-        constexpr std::string_view line {"*[pan2017eb]  	(21.37)  	- ਇੰਡਿਅਨ ਰਿਵਾਇਜ਼ਡ ਵਰਜ਼ਨ (IRV) - ਪੰਜਾਬੀ"};
-        EXPECT_EQ(sword::parse(line)->abbrev, "pan2017eb");
-        EXPECT_EQ(sword::parse(line)->version, "21.37");
-        EXPECT_EQ(sword::parse(line)->name, "ਇੰਡਿਅਨ ਰਿਵਾਇਜ਼ਡ ਵਰਜ਼ਨ (IRV) - ਪੰਜਾਬੀ");
-    }
-
-    {
-        constexpr std::string_view line {"*[ABSMaps]  	(1.071229)  	- Maps by American Bible Society (1888)"};
-        EXPECT_EQ(sword::parse(line)->abbrev, "ABSMaps");
-        EXPECT_EQ(sword::parse(line)->version, "1.071229");
-        EXPECT_EQ(sword::parse(line)->name, "Maps by American Bible Society (1888)");
-    }
-
-    {
-        constexpr std::string_view line {"id]  	(1.1)  	- Name"};
-        EXPECT_FALSE(sword::parse(line));
-    }
-    {
-        constexpr std::string_view line {"[id  	(1.1)  	- Name"};
-        EXPECT_FALSE(sword::parse(line));
-    }
-    {
-        constexpr std::string_view line {"[id]  	1.1)  	- Name"};
-        EXPECT_FALSE(sword::parse(line));
-    }
-    {
-        constexpr std::string_view line {"[id]  	(1.1  	- Name"};
-        EXPECT_FALSE(sword::parse(line));
-    }
-}
-
 
 TEST_F(sword_lib, download_required)
 {
