@@ -42,6 +42,10 @@ int main(const int argc, char* argv[])
                 // Fetch and list the available remote sources.
                 sword.fetch_remote_sources();
             }
+            else if (command == sword::develop)
+            {
+                sword.develop();
+            }
             else
             {
                 // In this case the command parameter is the remote resource, e.g. "Crosswire".

@@ -26,6 +26,7 @@
 namespace sword {
 
 constexpr auto list {"list"};
+constexpr auto develop {"develop"};
 
 struct info
 {
@@ -40,12 +41,12 @@ class Sword
 {
 public:
     explicit Sword(store::Store& store) : m_store(store) {}
-    Sword() = delete;
     void initialize();
-    void fetch_remote_sources();
+    static void fetch_remote_sources();
     void fetch_modules();
     void leave_or_download_or_update_modules();
     void remote_source(std::string_view);
+    void develop();
 protected:
     [[nodiscard]] bool download_required(const sword::info& info) const;
 private:

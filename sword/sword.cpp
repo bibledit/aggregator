@@ -68,27 +68,29 @@ void Sword::initialize()
     utilities::shell_run("installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -sc", out_err);
     utilities::trim(out_err);
     logger::plain(out_err);
+    // Todo via SWORD API the same as above.
+    // sword::SWBuf baseDir = sword_logic_get_path ().c_str ();
+    // sword::InstallMgr *installMgr = new sword::InstallMgr (baseDir, NULL);
+    // installMgr->setUserDisclaimerConfirmed (true);
+    // if (installMgr->refreshRemoteSourceConfiguration()) {
+    //     success = false;
+    // }
+    // delete installMgr;
 }
 
 
 // Fetches and lists the remote sources.
 void Sword::fetch_remote_sources()
 {
-    logger::plain("Fetching list of remote SWORD sources");
-    utilities::shell_run("installmgr -s", out_err);
-    utilities::trim(out_err);
-    logger::plain(out_err);
-    logger::plain("The following remote sources are available");
-    for (auto line : utilities::explode_lines(out_err, '\n'))
-    {
-        utilities::trim(line);
-        if (line.empty() or not line.starts_with('[') or not line.ends_with(']'))
-            continue;
-        line.erase(0, 1);
-        line.pop_back();
-        std::ostringstream ss{};
-        ss << std::quoted(line);
-        logger::plain(std::move(ss).str());
+    logger::plain("List of the remote SWORD sources:");
+    const sword::SWBuf base_dir = get_sword_install_mgr_path().c_str ();
+    sword::InstallMgr install_manager (base_dir, nullptr);
+    install_manager.setUserDisclaimerConfirmed (true);
+    for (const sword::InstallSource* install_source : install_manager.sources | std::views::values) {
+        logger::plain(install_source->caption);
+        // logger::plain("Type", install_source->type);
+        // logger::plain("Source", install_source->source);
+        // logger::plain("Directory", install_source->directory);
     }
 }
 
@@ -227,6 +229,38 @@ void Sword::install_module(const sword::info& info)
     command << "installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -ri " << std::quoted(m_remote_source) << " " << std::quoted(info.abbrev);
     logger::plain(command.str());
     system(command.str().c_str());
+
+    // Todo the same as above, but via the SWORD API:
+    // sword::SWMgr *mgr = new sword::SWMgr();
+    //
+    // sword::SWBuf baseDir = sword_logic_get_path ().c_str ();
+    //
+    // sword::InstallMgr *installMgr = new sword::InstallMgr (baseDir, NULL);
+    // installMgr->setUserDisclaimerConfirmed (true);
+    //
+    // sword::InstallSourceMap::iterator source = installMgr->sources.find(source_name.c_str ());
+    // if (source == installMgr->sources.end()) {
+    //     database::logs::log ("Could not find remote source", source_name);
+    // } else {
+    //     sword::InstallSource *is = source->second;
+    //     sword::SWMgr *rmgr = is->getMgr();
+    //     sword::SWModule *module;
+    //     sword::ModMap::iterator it = rmgr->Modules.find(module_name.c_str());
+    //     if (it == rmgr->Modules.end()) {
+    //         database::logs::log ("Remote source", source_name, "does not make available module", module_name);
+    //     } else {
+    //         module = it->second;
+    //         int error = installMgr->installModule(mgr, 0, module->getName(), is);
+    //         if (error) {
+    //             database::logs::log ("Error installing module", module_name);
+    //         } else {
+    //             database::logs::log ("Installed module", module_name);
+    //         }
+    //     }
+    // }
+    //
+    // delete installMgr;
+    // delete mgr;
 }
 
 
@@ -382,4 +416,19 @@ void Sword::uninstall_module(const sword::info& info)
     utilities::shell_run(command, out_err);
     utilities::trim(out_err);
     logger::plain (out_err);
+}
+
+
+void Sword::develop()
+{
+    logger::plain("Develop");
+    remote_source("CrossWire");
+    const sword::info info {
+        .abbrev = "KJV",
+        .version = "1.0",
+        .name = "Develop"
+    };
+//    install_module(info);
+
+
 }
