@@ -28,6 +28,11 @@
 #include "logger.h"
 #include "utilities.h"
 #include "books/books.h"
+#include <swmgr.h>
+#include <installmgr.h>
+#include <filemgr.h>
+#include <swmodule.h>
+
 
 
 [[nodiscard]] static std::string get_sword_install_mgr_path()
@@ -104,19 +109,59 @@ void Sword::fetch_modules()
     }
     utilities::trim(out_err);
     logger::plain(out_err);
+
+    sword::SWBuf base_dir = get_sword_install_mgr_path().c_str();
+    sword::InstallMgr install_manager(base_dir, nullptr);
+    install_manager.setUserDisclaimerConfirmed (true);
+    auto source_iter = install_manager.sources.find(m_remote_source.c_str ());
+    if (source_iter == install_manager.sources.cend())
+        throw Base ("Could not find remote source", m_remote_source);
+    sword::SWMgr sword_manager;
+    sword::SWMgr* other_manager = source_iter->second->getMgr();
+    if (not other_manager)
+        other_manager = std::addressof(sword_manager);
+    const std::map<sword::SWModule*, int> mods = sword::InstallMgr::getModuleStatus(sword_manager, *other_manager);
+    for (const auto& [module_ptr, module_status] : mods)
     {
-        std::ostringstream command {};
-        command << "installmgr -rl " << std::quoted(m_remote_source);
-        utilities::shell_run(std::move(command).str(), out_err);
-    }
-    for (const auto& line : utilities::explode_lines(out_err, '\n'))
-    {
-        if (const std::optional<sword::info> info = sword::parse(line))
+        const sword::SWModule* module = module_ptr;
+
+        std::string name = module->getName();
+        std::string version = module->getConfigEntry("Version");
+        std::string description = module->getDescription();
+
+        // No CipherKey entry: the module is not encrypted.
+        // Skip encrypted module (no CipherKey to decrypt it).
+        if (module->getConfigEntry("CipherKey"))
         {
-            m_modules.push_back(*info);
-            logger::plain(line);
+            logger::plain("Skipping encrypted module", name, version, description);
+            continue;
         }
+
+        // Skip module if it is not verse-based (Bible or commentary).
+        const auto verse_based = [module]
+        {
+            const std::string module_type = module->getType();
+            if (module_type == "Biblical Texts")
+                return true;
+            if (module_type == "Commentaries")
+                return true;
+            return false;
+        };
+        if (not verse_based())
+        {
+            logger::plain("Skipping non-verse based module", name, version, description);
+            continue;
+        }
+
+        logger::plain("Consider module", name, version, description);
+        sword::info info {
+            .abbrev = std::move(name),
+            .version = std::move(version),
+            .name = std::move(description)
+        };
+        m_modules.push_back(std::move(info));
     }
+
     logger::plain(m_remote_source, ":", m_modules.size(), "modules");
 }
 
