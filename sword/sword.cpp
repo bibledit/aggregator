@@ -31,6 +31,7 @@
 #include <swmgr.h>
 #include <installmgr.h>
 #include <filemgr.h>
+#include <remotetrans.h>
 #include <swmodule.h>
 
 
@@ -219,48 +220,60 @@ bool Sword::download_required(const sword::info& info) const
 }
 
 
+namespace {
+class MyStatusReporter : public sword::StatusReporter {
+public:
+    // Called repeatedly while a file is being downloaded.
+    void update(const unsigned long total_bytes, const unsigned long completed_bytes) override {
+        const int percent = total_bytes ? static_cast<int>(completed_bytes * 100 / total_bytes) : 0;
+        std::cout << "\rProgress: " << percent << "% (" << completed_bytes << "/" << total_bytes << ")" << std::flush;
+    }
+    // Called before each file download starts.
+    void preStatus(const long total_bytes, [[maybe_unused]] const long completed_bytes, const char *message) override {
+        std::cout << "\n" << (message ? message : "") << " " << total_bytes << " bytes" << std::endl;
+    }
+};
+}
+
+
 void Sword::install_module(const sword::info& info)
 {
     logger::plain ("Install SWORD module", info.abbrev, "from source", m_remote_source);
     // Installation through SWORD InstallMgr binary "installmgr" works
     // when running it from the ~/.sword/InstallMgr directory.
-    std::ostringstream command;
-    command << "cd " << get_sword_install_mgr_path() << "; ";
-    command << "installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -ri " << std::quoted(m_remote_source) << " " << std::quoted(info.abbrev);
-    logger::plain(command.str());
-    system(command.str().c_str());
+    // std::ostringstream command;
+    // command << "cd " << get_sword_install_mgr_path() << "; ";
+    // command << "installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -ri " << std::quoted(m_remote_source) << " " << std::quoted(info.abbrev);
+    // logger::plain(command.str());
+    // system(command.str().c_str());
 
-    // Todo the same as above, but via the SWORD API:
-    // sword::SWMgr *mgr = new sword::SWMgr();
-    //
-    // sword::SWBuf baseDir = sword_logic_get_path ().c_str ();
-    //
-    // sword::InstallMgr *installMgr = new sword::InstallMgr (baseDir, NULL);
-    // installMgr->setUserDisclaimerConfirmed (true);
-    //
-    // sword::InstallSourceMap::iterator source = installMgr->sources.find(source_name.c_str ());
-    // if (source == installMgr->sources.end()) {
-    //     database::logs::log ("Could not find remote source", source_name);
-    // } else {
-    //     sword::InstallSource *is = source->second;
-    //     sword::SWMgr *rmgr = is->getMgr();
-    //     sword::SWModule *module;
-    //     sword::ModMap::iterator it = rmgr->Modules.find(module_name.c_str());
-    //     if (it == rmgr->Modules.end()) {
-    //         database::logs::log ("Remote source", source_name, "does not make available module", module_name);
-    //     } else {
-    //         module = it->second;
-    //         int error = installMgr->installModule(mgr, 0, module->getName(), is);
-    //         if (error) {
-    //             database::logs::log ("Error installing module", module_name);
-    //         } else {
-    //             database::logs::log ("Installed module", module_name);
-    //         }
-    //     }
-    // }
-    //
-    // delete installMgr;
-    // delete mgr;
+    const sword::SWBuf base_dir = get_sword_install_mgr_path().c_str ();
+    sword::SWMgr sword_mgr (base_dir); // Works if if path set.
+    MyStatusReporter reporter;
+    sword::InstallMgr installMgr (base_dir, &reporter);
+    installMgr.setUserDisclaimerConfirmed (true);
+    const sword::InstallSourceMap::iterator source = installMgr.sources.find(m_remote_source.c_str());
+    if (source == installMgr.sources.end())
+    {
+        logger::plain("Could not find remote source", m_remote_source);
+        return;
+    }
+    sword::InstallSource *install_source = source->second;
+    sword::SWMgr *remote_manager = install_source->getMgr();
+    const sword::ModMap::iterator it = remote_manager->Modules.find(info.abbrev.c_str());
+    if (it == remote_manager->Modules.end())
+    {
+        logger::plain ("Remote source", m_remote_source, "does not make available module", info.abbrev);
+        return;
+    }
+    const sword::SWModule *module = it->second;
+    const int error = installMgr.installModule(&sword_mgr, nullptr, module->getName(), install_source);
+    if (error)
+    {
+        logger::plain ("Error installing module", info.abbrev);
+        return;
+    }
+    logger::plain ("Installed module", info.abbrev);
 }
 
 
@@ -412,10 +425,23 @@ void Sword::import_module(const sword::info& info)
 void Sword::uninstall_module(const sword::info& info)
 {
     logger::plain ("Uninstall SWORD module", info.abbrev);
-    const std::string command = "cd " + get_sword_install_mgr_path() + "; installmgr -u \"" + info.abbrev + "\"";
-    utilities::shell_run(command, out_err);
-    utilities::trim(out_err);
-    logger::plain (out_err);
+    const sword::SWBuf base_dir = get_sword_install_mgr_path().c_str ();
+    sword::SWMgr sword_mgr (base_dir);
+    sword::InstallMgr installMgr (base_dir, nullptr);
+    const sword::ModMap::iterator it = sword_mgr.Modules.find(info.abbrev.c_str());
+    if (it == sword_mgr.Modules.end())
+    {
+        logger::plain ("Module", info.abbrev, "is not installed");
+        return;
+    }
+    const sword::SWModule *module = it->second;
+    const int error = installMgr.removeModule(&sword_mgr, module->getName());
+    if (error)
+    {
+        logger::plain ("Error uninstalling module", info.abbrev);
+        return;
+    }
+    logger::plain ("Uninstalled module", info.abbrev);
 }
 
 
@@ -424,11 +450,43 @@ void Sword::develop()
     logger::plain("Develop");
     remote_source("CrossWire");
     const sword::info info {
-        .abbrev = "KJV",
+        .abbrev = "AB",
         .version = "1.0",
         .name = "Develop"
     };
-//    install_module(info);
+    install_module(info);
+    uninstall_module(info);
 
+    // The SWORD manager should be pointed to the path of the library, in order to work. Todo perhaps other operations require this too.
+    sword::SWMgr sword_manager (get_sword_install_mgr_path().c_str ());
+    sword_manager.setGlobalOption("Footnotes", "Off");
+    sword_manager.setGlobalOption("Headings", "Off");
+    sword_manager.setGlobalOption("Strong's Numbers", "Off");
+    sword_manager.setGlobalOption("Morphological Tags", "Off");
+    sword_manager.setGlobalOption("Hebrew Cantillation", "On");
+    sword_manager.setGlobalOption("Hebrew Vowel Points", "On");
+    sword_manager.setGlobalOption("Greek Accents", "On");
+    sword_manager.setGlobalOption("Lemmas", "Off");
+    sword_manager.setGlobalOption("Cross-references", "Off");
+    sword_manager.setGlobalOption("Words of Christ in Red", "Off");
+    sword_manager.setGlobalOption("Arabic Vowel Points", "On");
+    sword_manager.setGlobalOption("Glosses", "Off");
+    sword_manager.setGlobalOption("Transliterated Forms", "Off");
+    sword_manager.setGlobalOption("Enumerations", "Off");
+    sword_manager.setGlobalOption("Transliteration", "Off");
+    sword_manager.setGlobalOption("Textual Variants", "All Readings");
+    //manager.setGlobalOption("Textual Variants", "Secondary Reading");
+    //manager.setGlobalOption("Textual Variants", "Primary Reading");
+    sword::SWModule *module = sword_manager.getModule (info.abbrev.c_str ());
+    if (not module)
+    {
+        logger::plain("SWORD module", info.abbrev, "is not available");
+        return;
+    }
 
+    sword::SWKey key {"Gen 1:1"};
+    module->setKey (key);
+    const char* rendering = module->renderText();
+
+    logger::plain("Rendering:", rendering);
 }

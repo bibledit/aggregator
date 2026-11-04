@@ -56,5 +56,5 @@ private:
     store::Store& m_store; // The general store.
     void install_module(const sword::info& info);
     void import_module(const sword::info& info);
-    void uninstall_module(const sword::info& info);
+    static void uninstall_module(const sword::info& info);
 };
