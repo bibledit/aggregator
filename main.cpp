@@ -36,7 +36,7 @@ int main(const int argc, char* argv[])
         {
             const auto& command = arguments.sword();
             Sword sword(store);
-            sword.initialize();
+            Sword::initialize();
             if (command == sword::list)
             {
                 Sword::list_remote_sources();

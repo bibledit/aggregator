@@ -41,7 +41,7 @@ class Sword
 {
 public:
     explicit Sword(store::Store& store) : m_store(store) {}
-    void initialize();
+    static void initialize();
     static void list_remote_sources();
     void fetch_modules();
     void leave_or_download_or_update_modules();

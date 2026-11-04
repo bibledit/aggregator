@@ -31,6 +31,7 @@
 #include <swmgr.h>
 #include <installmgr.h>
 #include <filemgr.h>
+#include <swbuf.h>
 #include <remotetrans.h>
 #include <swmodule.h>
 #include <versekey.h>
@@ -47,37 +48,32 @@ void Sword::initialize()
 {
     logger::plain("Initialize SWORD structures");
 
-    // Initialize SWORD directory structure and configuration.
+    // Initialize SWORD directory structure.
     const std::string sword_path = get_sword_install_mgr_path();
     const std::filesystem::path path(sword_path);
     logger::plain ("Initialize SWORD in", path);
     std::filesystem::create_directories(path);
-    const std::string sword_conf = "[Install]\n"
-        "DataPath=" + sword_path + "/\n";
-    utilities::file_put_contents(utilities::create_path(sword_path, "sword.conf"), sword_conf);
-    const std::string config_files_path = utilities::create_path(SOURCE_DIR, "sword");
-    utilities::shell_run("cp -r " + config_files_path + "/locales.d " + sword_path, out_err);
-    logger::plain(out_err);
-    utilities::shell_run("cp -r " + config_files_path + "/mods.d " + sword_path, out_err);
-    logger::plain(out_err);
+    const sword::SWBuf base_dir = get_sword_install_mgr_path().c_str ();
 
-    // Initialize basic user configuration.
-    utilities::shell_run("installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -init", out_err);
-    utilities::trim(out_err);
-    logger::plain(out_err);
+    // installmgr needs these directories to exist:
+    // createParent() creates all parents of a file path.
+    sword::FileMgr::createParent (base_dir + "/mods.d/placeholder");
+    sword::FileMgr::createParent (base_dir + "/modules/placeholder");
+
+    // The constructor creates the InstallMgr config directory and reads InstallMgr.conf.
+    // If there is none, it falls back to the default CrossWire source.
+    sword::InstallMgr installMgr (base_dir, nullptr);
+
+    // Equivalent of --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom.
+    installMgr.setUserDisclaimerConfirmed (true);
+
+    // Write InstallMgr.conf to disk. This is what "-init" boils down to.
+    installMgr.saveInstallConf ();
+    logger::plain ("Initialized SWORD install manager in", base_dir.c_str ());
 
     // Sync the configuration with the online known remote repository list.
-    utilities::shell_run("installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -sc", out_err);
-    utilities::trim(out_err);
-    logger::plain(out_err);
-    // Todo via SWORD API the same as above.
-    // sword::SWBuf baseDir = sword_logic_get_path ().c_str ();
-    // sword::InstallMgr *installMgr = new sword::InstallMgr (baseDir, NULL);
-    // installMgr->setUserDisclaimerConfirmed (true);
-    // if (installMgr->refreshRemoteSourceConfiguration()) {
-    //     success = false;
-    // }
-    // delete installMgr;
+    if (installMgr.refreshRemoteSourceConfiguration ())
+        logger::plain ("Could not refresh the remote source configuration");
 }
 
 
@@ -103,7 +99,7 @@ void Sword::remote_source(const std::string_view remote_source)
 }
 
 
-void Sword::fetch_modules()
+void Sword::fetch_modules() // Todo use API
 {
     logger::plain("Fetching SWORD modules");
     {
@@ -278,9 +274,6 @@ void Sword::install_module(const sword::info& info)
 }
 
 
-constexpr auto corrupt_data_during_decompression {"corrupt data during decompression"};
-
-
 void Sword::import_module(const sword::info& info) const
 {
     logger::plain("Importing module", info.name, "version", info.version);
@@ -387,9 +380,8 @@ void Sword::import_module(const sword::info& info) const
 
     const auto get_module_id = [&]
     {
-        const std::optional<store::Module> module = m_store.get_module(store::Type::sword, m_remote_source, info.abbrev);
-        if (module)
-            return module->id;
+        if (const std::optional<store::Module> existing_module = m_store.get_module(store::Type::sword, m_remote_source, info.abbrev))
+            return existing_module->id;
         return utilities::get_next_id();
     };
     const int module_id {get_module_id()};
