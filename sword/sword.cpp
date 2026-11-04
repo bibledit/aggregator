@@ -79,8 +79,8 @@ void Sword::initialize()
 }
 
 
-// Fetches and lists the remote sources.
-void Sword::fetch_remote_sources()
+// List the remote sources.
+void Sword::list_remote_sources()
 {
     logger::plain("List of the remote SWORD sources:");
     const sword::SWBuf base_dir = get_sword_install_mgr_path().c_str ();

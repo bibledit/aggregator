@@ -40,7 +40,7 @@ int main(const int argc, char* argv[])
             if (command == sword::list)
             {
                 // Fetch and list the available remote sources.
-                sword.fetch_remote_sources();
+                sword.list_remote_sources();
             }
             else if (command == sword::develop)
             {
