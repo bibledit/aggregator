@@ -55,6 +55,6 @@ private:
     std::vector<sword::info> m_modules{}; // The remote modules.
     store::Store& m_store; // The general store.
     void install_module(const sword::info& info);
-    void import_module(const sword::info& info);
+    void import_module(const sword::info& info) const;
     static void uninstall_module(const sword::info& info);
 };

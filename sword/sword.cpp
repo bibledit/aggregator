@@ -33,6 +33,7 @@
 #include <filemgr.h>
 #include <remotetrans.h>
 #include <swmodule.h>
+#include <versekey.h>
 
 
 
@@ -174,7 +175,7 @@ void Sword::leave_or_download_or_update_modules()
     // Iterate over the module information.
     for (const sword::info& module_info : m_modules) {
         if (not download_required(module_info)) {
-            logger::plain("No download required for SWORD module", module_info.abbrev, "because it is up-to-date");
+            logger::plain("No download required for module", module_info.abbrev, "because it is up-to-date");
             continue;
         }
         install_module(module_info);
@@ -252,7 +253,7 @@ void Sword::install_module(const sword::info& info)
     MyStatusReporter reporter;
     sword::InstallMgr installMgr (base_dir, &reporter);
     installMgr.setUserDisclaimerConfirmed (true);
-    const sword::InstallSourceMap::iterator source = installMgr.sources.find(m_remote_source.c_str());
+    const auto source = installMgr.sources.find(m_remote_source.c_str());
     if (source == installMgr.sources.end())
     {
         logger::plain("Could not find remote source", m_remote_source);
@@ -260,15 +261,15 @@ void Sword::install_module(const sword::info& info)
     }
     sword::InstallSource *install_source = source->second;
     sword::SWMgr *remote_manager = install_source->getMgr();
-    const sword::ModMap::iterator it = remote_manager->Modules.find(info.abbrev.c_str());
-    if (it == remote_manager->Modules.end())
+    const auto module_iter = remote_manager->Modules.find(info.abbrev.c_str());
+    if (module_iter == remote_manager->Modules.end())
     {
         logger::plain ("Remote source", m_remote_source, "does not make available module", info.abbrev);
         return;
     }
-    const sword::SWModule *module = it->second;
-    const int error = installMgr.installModule(&sword_mgr, nullptr, module->getName(), install_source);
-    if (error)
+    const sword::SWModule *module = module_iter->second;
+    if (const int error = installMgr.installModule(&sword_mgr, nullptr, module->getName(), install_source);
+        error != 0)
     {
         logger::plain ("Error installing module", info.abbrev);
         return;
@@ -280,114 +281,103 @@ void Sword::install_module(const sword::info& info)
 constexpr auto corrupt_data_during_decompression {"corrupt data during decompression"};
 
 
-void Sword::import_module(const sword::info& info)
+void Sword::import_module(const sword::info& info) const
 {
-    logger::plain("Importing SWORD module", info.name, "version", info.version);
+    logger::plain("Importing module", info.name, "version", info.version);
 
     // The data for the entire module.
     data::Data data{};
 
-    // Run "diatheke" from the SWORD installation directory, else it fails.
-    const std::string sword_path = get_sword_install_mgr_path();
+    // The SWORD manager should be pointed to the path of the library, else it fails.
+    sword::SWMgr sword_manager (get_sword_install_mgr_path().c_str ());
 
-    // The server fetches the module text as follows: diatheke -b KJV -k Jn 3:16
-    // This gets the entire book of John: diatheke -b NETfree -o -n -k Jn
-    // To include more notes, run this instead: $ diatheke -b KJV -o n -k Jn 3:16
+    // Set options that influence the text content.
+    sword_manager.setGlobalOption("Footnotes", "Off");
+    sword_manager.setGlobalOption("Headings", "Off");
+    sword_manager.setGlobalOption("Strong's Numbers", "Off");
+    sword_manager.setGlobalOption("Morphological Tags", "Off");
+    sword_manager.setGlobalOption("Hebrew Cantillation", "On");
+    sword_manager.setGlobalOption("Hebrew Vowel Points", "On");
+    sword_manager.setGlobalOption("Greek Accents", "On");
+    sword_manager.setGlobalOption("Lemmas", "Off");
+    sword_manager.setGlobalOption("Cross-references", "Off");
+    sword_manager.setGlobalOption("Words of Christ in Red", "Off");
+    sword_manager.setGlobalOption("Arabic Vowel Points", "On");
+    sword_manager.setGlobalOption("Glosses", "Off");
+    sword_manager.setGlobalOption("Transliterated Forms", "Off");
+    sword_manager.setGlobalOption("Enumerations", "Off");
+    sword_manager.setGlobalOption("Transliteration", "Off");
+    sword_manager.setGlobalOption("Textual Variants", "All Readings");
+    //manager.setGlobalOption("Textual Variants", "Secondary Reading");
+    //manager.setGlobalOption("Textual Variants", "Primary Reading");
 
-    for (const auto book_type : {books::BookType::OldTestament, books::BookType::NewTestament})
+    sword::SWModule* module = sword_manager.getModule(info.abbrev.c_str());
+    if (not module)
     {
-        for (const auto& osis : books::get_all_osis(book_type))
+        logger::plain("Module", info.abbrev, "is not available");
+        return;
+    }
+
+    // Use the module's own key, so the versification matches the module.
+    auto *verse_key = dynamic_cast<sword::VerseKey *>(module->getKey());
+    if (not verse_key)
+    {
+        logger::plain("Module", info.abbrev, "does not use a verse key");
+        return;
+    }
+
+    // Don't let setters jump to neighbouring books.
+    verse_key->setAutoNormalize(false);
+
+    // Iterate over both Testaments.
+    // The Old Testament may also contain Apocrypha for some verse systems.
+    for (char testament : std::initializer_list<char>{1, 2})
+    {
+        verse_key->setTestament(testament);
+        // Number of books in this testament.
+        const int max_book = verse_key->getBookMax();
+        for (int book = 1; book <= max_book; ++book)
         {
-            logger::plain("Extracting from", osis);
-            // Build and run the command to fetch text for the entire book.
-            std::string parameters;
-            parameters.append("-b " + info.abbrev + " -o ");
-            parameters.append("n"); // Keep OSIS content.
-            // Hebrew cantillation / Hebrew vowels / Greek accents / Arabic vowels / Arabic shaping.
-            parameters.append("cvapr");
-            parameters.append(" -k ");
-            parameters.append(osis);
-            if (const int result = utilities::shell_run("cd " + sword_path + "; diatheke " + parameters, out_err); result != 0)
+            verse_key->setBook(static_cast<char>(book));
+
+            // Info about book: name and id.
+            //const std::string name = verse_key->getBookName();
+            const std::string module_osis_book_name = verse_key->getOSISBookName();
+            const int book_id = books::get_id_fuzzy(module_osis_book_name);
+            logger::plain("Extracting from", module_osis_book_name);
+
+            // Number of chapters in this book.
+            const int max_chapter = verse_key->getChapterMax();
+            for (int chapter = 1; chapter <= max_chapter; ++chapter)
             {
-                logger::plain("Error fetching SWORD data from module", info.abbrev, "book", osis, ":", out_err);
-                continue; // Try next book.
-            }
+                verse_key->setChapter(chapter);
 
-            // If the module has not been installed, the output of "diatheke" will be empty.
-            if (out_err.empty())
-            {
-                logger::plain("Skipping module", info.abbrev, "because it is not installed");
-                return; // Skip this module.
-            }
-
-            // If the module was encrypted, the output of "diatheke" displays a decompression error.
-            if (out_err.find(corrupt_data_during_decompression) != std::string::npos)
-            {
-                logger::plain("Skipping module", info.abbrev, "because it is encrypted");
-                return; // Skip this module.
-            }
-
-            // If the module was installed, but the requested book is out of range,
-            // the output of "diatheke" contains the module name.
-            if (out_err.size() < info.abbrev.size() + 10)
-            {
-                logger::plain("The book", osis, "is not available in module", info.abbrev);
-                continue; // Try next book.
-            }
-
-            // There's a large block of text for one book.
-            // This consists of multiple lines like this:
-            // Malachi 3:1: <verse osisID="Mal.3.1">Behold, I send forth My messenger, and he shall survey the way before Me: and the Lord, whom you seek, shall suddenly come into His temple, even the Messenger of the covenant, whom you take pleasure in: behold, He is coming, says the Lord Almighty.
-            // Split the text block into lines.
-            std::vector<std::string> lines = utilities::explode_lines(out_err, '\n');
-
-            // Find the shortest required book chapter:verse size.
-            const auto get_shortest_passage_signature = []
-            {
-                const auto osis_ot = get_all_osis(books::BookType::OldTestament);
-                const auto it1 = std::ranges::min_element(osis_ot, {}, &std::string::size);
-                const auto osis_nt = get_all_osis(books::BookType::NewTestament);
-                const auto it2 = std::ranges::min_element(osis_nt, {}, &std::string::size);
-                // Add chapter:verse like "Genesis 1:1: ".
-                // Shortest text is "Jesus wept" -> 10 characters.
-                return std::min(it1->size(), it2->size()) + 6 + 10;
-            };
-            const std::size_t shortest_passage_signature = get_shortest_passage_signature();
-
-            for (auto& line : lines)
-            {
-                // Clean it up.
-                utilities::trim(line);
-
-                // If the line is so short that no verse text could have been there, skip it.
-                if (line.size() <= shortest_passage_signature)
-                    continue;
-
-                // Fetch the passage, if not, record that and skip the line.
-                const std::optional<books::Passage> passage = books::get_passage(line);
-                if (not passage)
+                // Number of verses in this chapter.
+                const int max_verse = verse_key->getVerseMax();
+                for (int verse = 1; verse <= max_verse; ++verse)
                 {
-                    logger::plain("No passage found in:", line);
-                    continue; // Skip this line.
+                    verse_key->setVerse(verse);
+                    // The versification may define books the module does not contain, e.g. an NT-only module.
+                    if (not module->hasEntry(verse_key))
+                        continue;
+
+                    // Get verse text.
+                    std::string rendering = module->renderText().c_str();
+
+                    // Process the XML and so on in the line, in the order below.
+                    rendering = utilities::replace_xml_elements(rendering);
+                    rendering = utilities::strip_xml_elements(rendering);
+                    utilities::remove_double_spaces(rendering);
+                    utilities::trim(rendering);
+                    data.add_or_replace(
+                        data::VerseText{
+                            .book = book_id,
+                            .chapter = chapter,
+                            .verse = verse,
+                            .text = rendering,
+                        }
+                    );
                 }
-
-                // Get the length of the passage signature to skip to get the verse text.
-                const size_t skip = passage->book_name.size() + 1 + std::to_string(passage->chapter).size() + 1 + std::to_string(passage->verse).size() + 1;
-                line.erase(0, skip);
-
-                // Process the XML and so on in the line, in the order below.
-                line = utilities::replace_xml_elements(line);
-                line = utilities::strip_xml_elements(line);
-                utilities::remove_double_spaces(line);
-                utilities::trim(line);
-                data.add_or_replace(
-                    data::VerseText{
-                        .book = passage->book_id,
-                        .chapter = passage->chapter,
-                        .verse = passage->verse,
-                        .text = line,
-                    }
-                );
             }
         }
     }
@@ -428,15 +418,14 @@ void Sword::uninstall_module(const sword::info& info)
     const sword::SWBuf base_dir = get_sword_install_mgr_path().c_str ();
     sword::SWMgr sword_mgr (base_dir);
     sword::InstallMgr installMgr (base_dir, nullptr);
-    const sword::ModMap::iterator it = sword_mgr.Modules.find(info.abbrev.c_str());
-    if (it == sword_mgr.Modules.end())
+    const auto module_iter = sword_mgr.Modules.find(info.abbrev.c_str());
+    if (module_iter == sword_mgr.Modules.end())
     {
         logger::plain ("Module", info.abbrev, "is not installed");
         return;
     }
-    const sword::SWModule *module = it->second;
-    const int error = installMgr.removeModule(&sword_mgr, module->getName());
-    if (error)
+    const sword::SWModule *module = module_iter->second;
+    if (const int error = installMgr.removeModule(&sword_mgr, module->getName()); error != 0)
     {
         logger::plain ("Error uninstalling module", info.abbrev);
         return;
@@ -454,39 +443,7 @@ void Sword::develop()
         .version = "1.0",
         .name = "Develop"
     };
-    install_module(info);
-    uninstall_module(info);
-
-    // The SWORD manager should be pointed to the path of the library, in order to work. Todo perhaps other operations require this too.
-    sword::SWMgr sword_manager (get_sword_install_mgr_path().c_str ());
-    sword_manager.setGlobalOption("Footnotes", "Off");
-    sword_manager.setGlobalOption("Headings", "Off");
-    sword_manager.setGlobalOption("Strong's Numbers", "Off");
-    sword_manager.setGlobalOption("Morphological Tags", "Off");
-    sword_manager.setGlobalOption("Hebrew Cantillation", "On");
-    sword_manager.setGlobalOption("Hebrew Vowel Points", "On");
-    sword_manager.setGlobalOption("Greek Accents", "On");
-    sword_manager.setGlobalOption("Lemmas", "Off");
-    sword_manager.setGlobalOption("Cross-references", "Off");
-    sword_manager.setGlobalOption("Words of Christ in Red", "Off");
-    sword_manager.setGlobalOption("Arabic Vowel Points", "On");
-    sword_manager.setGlobalOption("Glosses", "Off");
-    sword_manager.setGlobalOption("Transliterated Forms", "Off");
-    sword_manager.setGlobalOption("Enumerations", "Off");
-    sword_manager.setGlobalOption("Transliteration", "Off");
-    sword_manager.setGlobalOption("Textual Variants", "All Readings");
-    //manager.setGlobalOption("Textual Variants", "Secondary Reading");
-    //manager.setGlobalOption("Textual Variants", "Primary Reading");
-    sword::SWModule *module = sword_manager.getModule (info.abbrev.c_str ());
-    if (not module)
-    {
-        logger::plain("SWORD module", info.abbrev, "is not available");
-        return;
-    }
-
-    sword::SWKey key {"Gen 1:1"};
-    module->setKey (key);
-    const char* rendering = module->renderText();
-
-    logger::plain("Rendering:", rendering);
+//    install_module(info);
+//    uninstall_module(info);
+    // import_module(info);
 }
