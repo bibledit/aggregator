@@ -18,25 +18,14 @@
 
 
 #include "data.h"
-#include <cstdint>
 #include <fstream>
 #include "exception.h"
 #include <utility>
 #include <nlohmann/json.hpp>
-
 #include "utilities.h"
 using json = nlohmann::json;
 
 namespace data {
-
-Data::Data()
-{
-}
-
-Data::~Data()
-{
-}
-
 
 static json verse_to_json(const VerseText& vt)
 {

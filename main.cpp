@@ -17,8 +17,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include <cstdlib>
-#include <iostream>
-#include <ostream>
 #include "arguments.h"
 #include "logger.h"
 #include "books/books.h"
@@ -47,7 +45,7 @@ int main(const int argc, char* argv[])
             }
             else
             {
-                // In this case the command parameter is the remote resource, e.g. "Crosswire".
+                // In this case the command parameter is the remote resource, e.g. "CrossWire".
                 sword.remote_source(command);
                 sword.fetch_modules();
                 sword.leave_or_download_or_update_modules();

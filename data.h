@@ -42,8 +42,7 @@ class Data
     std::string m_uuid {};
     std::vector<VerseText> m_data{};
 public:
-    Data();
-    ~Data();
+    Data() = default;
     void load(const std::optional<std::filesystem::path>& path);
     void save(std::optional<std::filesystem::path> path) const;
     [[nodiscard]] decltype(m_id) id() const { return m_id; }
