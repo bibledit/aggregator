@@ -104,7 +104,7 @@ void Data::save(std::optional<std::filesystem::path> path) const
         std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
         if (not out)
             throw Base("Saving data: Cannot open", tmp.string());
-        out << j.dump(2);
+        out << j.dump(2, ' ', false, nlohmann::json::error_handler_t::replace);
         out.flush();
         if (not out)
             throw Base("Saving data: Write failed for", tmp.string());
