@@ -99,34 +99,57 @@ void Sword::remote_source(const std::string_view remote_source)
 }
 
 
-void Sword::fetch_modules() // Todo use API
-{
-    logger::plain("Fetching SWORD modules");
-    {
-        std::ostringstream command {};
-        command << "installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom --allow-unverified-tls-peer -r " << std::quoted(m_remote_source);
-        utilities::shell_run(std::move(command).str(), out_err);
+namespace {
+class MyStatusReporter : public sword::StatusReporter {
+public:
+    // Called repeatedly while a file is being downloaded.
+    void update(const unsigned long total_bytes, const unsigned long completed_bytes) override {
+        const int percent = total_bytes ? static_cast<int>(completed_bytes * 100 / total_bytes) : 0;
+        std::cout << "\rProgress: " << percent << "% (" << completed_bytes << "/" << total_bytes << ")" << std::flush;
     }
-    utilities::trim(out_err);
-    logger::plain(out_err);
+    // Called before each file download starts.
+    void preStatus(const long total_bytes, [[maybe_unused]] const long completed_bytes, const char *message) override {
+        std::cout << "\n" << (message ? message : "") << " " << total_bytes << " bytes" << std::endl;
+    }
+};
+}
 
+
+void Sword::fetch_modules()
+{
     sword::SWBuf base_dir = get_sword_install_mgr_path().c_str();
-    sword::InstallMgr install_manager(base_dir, nullptr);
+    MyStatusReporter reporter;
+    sword::InstallMgr install_manager(base_dir, &reporter);
     install_manager.setUserDisclaimerConfirmed (true);
     auto source_iter = install_manager.sources.find(m_remote_source.c_str ());
     if (source_iter == install_manager.sources.cend())
         throw Base ("Could not find remote source", m_remote_source);
-    sword::SWMgr sword_manager;
+    // Downloads the module list of this source.
+    if (const int error = install_manager.refreshRemoteSource (source_iter->second))
+    {
+        logger::plain ("Could not refresh remote source", m_remote_source, "error", error);
+        return;
+    }
+    logger::plain ("Refreshed remote source", m_remote_source);
+
+    sword::SWMgr sword_manager (base_dir);
     sword::SWMgr* other_manager = source_iter->second->getMgr();
     if (not other_manager)
         other_manager = std::addressof(sword_manager);
+    // ReSharper disable once CppTooWideScopeInitStatement
     const std::map<sword::SWModule*, int> mods = sword::InstallMgr::getModuleStatus(sword_manager, *other_manager);
-    for (const auto& [module_ptr, module_status] : mods)
+    for (const auto& module_ptr : mods | std::views::keys)
     {
         const sword::SWModule* module = module_ptr;
 
         std::string name = module->getName();
-        std::string version = module->getConfigEntry("Version");
+        const auto get_version = [module]
+        {
+            if (const char* version = module->getConfigEntry("Version"))
+                return version;
+            return "";
+        };
+        std::string version = get_version();
         std::string description = module->getDescription();
 
         // No CipherKey entry: the module is not encrypted.
@@ -141,9 +164,9 @@ void Sword::fetch_modules() // Todo use API
         const auto verse_based = [module]
         {
             const std::string module_type = module->getType();
-            if (module_type == "Biblical Texts")
+            if (module_type == sword::SWMgr::MODTYPE_BIBLES)
                 return true;
-            if (module_type == "Commentaries")
+            if (module_type == sword::SWMgr::MODTYPE_COMMENTARIES)
                 return true;
             return false;
         };
@@ -214,22 +237,6 @@ bool Sword::download_required(const sword::info& info) const
     }
 
     return false; // No download required.
-}
-
-
-namespace {
-class MyStatusReporter : public sword::StatusReporter {
-public:
-    // Called repeatedly while a file is being downloaded.
-    void update(const unsigned long total_bytes, const unsigned long completed_bytes) override {
-        const int percent = total_bytes ? static_cast<int>(completed_bytes * 100 / total_bytes) : 0;
-        std::cout << "\rProgress: " << percent << "% (" << completed_bytes << "/" << total_bytes << ")" << std::flush;
-    }
-    // Called before each file download starts.
-    void preStatus(const long total_bytes, [[maybe_unused]] const long completed_bytes, const char *message) override {
-        std::cout << "\n" << (message ? message : "") << " " << total_bytes << " bytes" << std::endl;
-    }
-};
 }
 
 
